@@ -24,3 +24,5 @@ reactapp2.client/.env.production
 *.sln
 *.sw?
 .build/*
+
+.env.development
