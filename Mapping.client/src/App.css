@@ -1,4 +1,8 @@
-﻿#root {
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#root {
     margin: 0 auto;
     padding: 0;
     text-align: center;
@@ -40,8 +44,38 @@ body,
 .flex-container {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 56px); /* Adjust for navbar height */
+    height: 100vh;
     overflow: hidden;
+    position: relative;
+}
+
+/* Desktop - ensure full height */
+@media (min-width: 769px) {
+    .flex-container {
+        height: 100vh;
+    }
+
+    .map-container {
+        height: 100%;
+    }
+}
+
+/* Mobile: account for browser UI chrome (address bar, etc.) */
+@media (max-width: 768px) {
+    .flex-container {
+        height: calc(100vh - 56px);
+        flex-direction: column;
+    }
+
+    .side-panel {
+        width: 100%;
+        height: auto;
+        max-height: 40vh;
+    }
+
+    .map-container {
+        height: 60vh;
+    }
 }
 
 /* Side panel styles */
@@ -49,10 +83,11 @@ body,
     width: 300px;
     height: 100%;
     padding: 15px;
-    background-color: #f0f0f0;
-    border-right: 1px solid #ddd;
+    background-color: #ffffff;
+    border-right: 1px solid #e5e7eb;
     overflow-y: auto;
     box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    color: #0f172a;
 }
 
 /* Container for the map */
@@ -60,6 +95,7 @@ body,
     width: 100%;
     height: 100%;
     flex: 1;
+    min-height: 0;
 }
 
 /* Input container within side panel */
@@ -170,6 +206,14 @@ input[type="checkbox"].input-style {
 
 .draw-rectangle-button {
     background-color: #6610f2;
+}
+
+.location-button {
+    background-color: #28a745;
+}
+
+.location-button:hover {
+    background-color: #218838;
 }
 
 .clear-shapes-button {

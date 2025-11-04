@@ -112,7 +112,7 @@ const MapComponentInner = () => {
     const onLoad = useCallback((map) => {
     console.log('Map loaded:', map);
         mapRef.current = map;
-    
+
     // Initialize the search box
         const searchBox = new window.google.maps.places.SearchBox(inputRef.current);
 
@@ -122,6 +122,68 @@ const MapComponentInner = () => {
     genInfoWindowRef.current = new google.maps.InfoWindow({
             content: "message",
         });
+
+    // Add custom location control button
+    console.log('Creating location control button...');
+    const locationButton = document.createElement("button");
+    locationButton.textContent = "📍";
+    locationButton.classList.add("custom-map-control-button");
+    locationButton.title = "Center on my location";
+    locationButton.type = "button";
+
+    // Style the button to match Google Maps controls
+    Object.assign(locationButton.style, {
+      backgroundColor: '#fff',
+      border: '0',
+      borderRadius: '50%',
+      boxShadow: '0 2px 6px rgba(0,0,0,.3)',
+      cursor: 'pointer',
+      fontSize: '18px',
+      margin: '10px',
+      padding: '0',
+      width: '40px',
+      height: '40px',
+      textAlign: 'center',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    });
+
+    // Add hover effect
+    locationButton.addEventListener('mouseenter', () => {
+      locationButton.style.backgroundColor = '#f5f5f5';
+    });
+    locationButton.addEventListener('mouseleave', () => {
+      locationButton.style.backgroundColor = '#fff';
+    });
+
+    // Add click handler
+    locationButton.addEventListener("click", () => {
+      console.log('Location button clicked!');
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            console.log('Got position:', pos);
+            map.setCenter(pos);
+            map.setZoom(15);
+          },
+          (error) => {
+            console.error('Geolocation error:', error);
+            alert("Error: The Geolocation service failed.");
+          }
+        );
+      } else {
+        alert("Error: Your browser doesn't support geolocation.");
+      }
+    });
+
+    // Add button to map controls
+    map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locationButton);
+    console.log('Location button added to map controls at RIGHT_BOTTOM');
 
     // Bias the SearchBox results towards current map's viewport
         map.addListener('bounds_changed', () => {
@@ -426,6 +488,15 @@ const MapComponentInner = () => {
           zoom={DEFAULT_ZOOM}
           onLoad={onLoad}
           onClick={handleMapClick}
+          options={{
+            zoomControl: true,
+            mapTypeControl: true,
+            scaleControl: true,
+            streetViewControl: true,
+            rotateControl: true,
+            fullscreenControl: true,
+            disableDefaultUI: false
+          }}
         >
           {/* Draw path for polyline */}
           {path.length > 0 && (
