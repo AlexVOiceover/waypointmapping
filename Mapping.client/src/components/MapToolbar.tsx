@@ -1,4 +1,3 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Square, Circle, Pencil, Hand, Map, Download, Trash2 } from 'lucide-react';
 
@@ -14,7 +13,7 @@ interface MapToolbarProps {
 }
 
 /**
- * Component for map toolbar with drawing controls
+ * Simplified map toolbar with drawing controls
  */
 const MapToolbar: React.FC<MapToolbarProps> = ({
   onStopDrawing,
@@ -26,94 +25,86 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   onClearShapes,
   startingIndex = 1
 }) => {
-  // Debug handler function to log button clicks
-  const handleButtonClick = (action: string, handler: () => void) => {
-    console.log(`Button clicked: ${action}`);
-    if (typeof handler === 'function') {
-      handler();
-    } else {
-      console.error(`Handler for ${action} is not a function:`, handler);
-    }
-  };
-
   return (
-    <div className="absolute top-5 right-5 z-10 w-[180px] bg-white rounded-lg shadow-lg border border-gray-200">
+    <div className="absolute top-24 right-5 z-[1000] w-[240px] bg-white rounded-xl shadow-xl border border-gray-300">
       {/* Drawing Tools Section */}
-      <div className="space-y-2 p-3 border-b border-gray-200">
-        <h4 className="text-xs font-semibold text-gray-700 mb-2">
-          Drawing Tools
+      <div className="p-4 bg-blue-50 border-b border-gray-200">
+        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <Pencil className="h-4 w-4 text-blue-600" />
+          <span className="text-gray-900">Drawing Tools</span>
         </h4>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleButtonClick('Draw Rectangle', onDrawRectangle)}
-            className="w-full justify-start text-xs h-8 !bg-white hover:!bg-blue-50 !text-gray-900 !border-gray-300"
+            onClick={onDrawRectangle}
+            className="w-full justify-start"
           >
-            <Square className="mr-1.5 h-3.5 w-3.5 !text-gray-900" />
+            <Square className="mr-2 h-4 w-4 text-blue-600" />
             Rectangle
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleButtonClick('Draw Circle', onDrawCircle)}
-            className="w-full justify-start text-xs h-8 !bg-white hover:!bg-blue-50 !text-gray-900 !border-gray-300"
+            onClick={onDrawCircle}
+            className="w-full justify-start"
           >
-            <Circle className="mr-1.5 h-3.5 w-3.5 !text-gray-900" />
+            <Circle className="mr-2 h-4 w-4 text-blue-600" />
             Circle
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleButtonClick('Draw Polyline', onDrawPolyline)}
-            className="w-full justify-start text-xs h-8 !bg-white hover:!bg-blue-50 !text-gray-900 !border-gray-300"
+            onClick={onDrawPolyline}
+            className="w-full justify-start"
           >
-            <Pencil className="mr-1.5 h-3.5 w-3.5 !text-gray-900" />
+            <Pencil className="mr-2 h-4 w-4 text-blue-600" />
             Polyline
           </Button>
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => handleButtonClick('Stop Drawing', onStopDrawing)}
-            className="w-full justify-start text-xs h-8 !bg-gray-200 !text-gray-900"
+            onClick={onStopDrawing}
+            className="w-full justify-start"
           >
-            <Hand className="mr-1.5 h-3.5 w-3.5 !text-gray-900" />
+            <Hand className="mr-2 h-4 w-4" />
             Stop Drawing
           </Button>
         </div>
       </div>
 
       {/* Actions Section */}
-      <div className="space-y-2 p-3">
-        <h4 className="text-xs font-semibold text-gray-700 mb-2">
-          Actions
+      <div className="p-4 bg-green-50">
+        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <Map className="h-4 w-4 text-green-600" />
+          <span className="text-gray-900">Actions</span>
         </h4>
         <input type="hidden" id="in_startingIndex" value={startingIndex} />
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <Button
             size="sm"
-            onClick={() => handleButtonClick('Generate Waypoints', onGenerateWaypoints)}
-            className="w-full justify-start text-xs h-8 !bg-blue-600 !text-white hover:!bg-blue-700"
+            onClick={onGenerateWaypoints}
+            className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white"
           >
-            <Map className="mr-1.5 h-3.5 w-3.5 !text-white" />
+            <Map className="mr-2 h-4 w-4" />
             Generate Waypoints
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => handleButtonClick('Export KML', onGenerateKml)}
-            className="w-full justify-start text-xs h-8 !bg-white hover:!bg-blue-50 !text-gray-900 !border-gray-300"
+            onClick={onGenerateKml}
+            className="w-full justify-start"
           >
-            <Download className="mr-1.5 h-3.5 w-3.5 !text-gray-900" />
+            <Download className="mr-2 h-4 w-4 text-green-600" />
             Export KML
           </Button>
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => handleButtonClick('Clear All', onClearShapes)}
-            className="w-full justify-start text-xs h-8 !bg-red-600 !text-white hover:!bg-red-700"
+            onClick={onClearShapes}
+            className="w-full justify-start"
           >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5 !text-white" />
+            <Trash2 className="mr-2 h-4 w-4" />
             Clear All
           </Button>
         </div>
@@ -121,5 +112,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
     </div>
   );
 };
+
+MapToolbar.displayName = 'MapToolbar';
 
 export default MapToolbar;

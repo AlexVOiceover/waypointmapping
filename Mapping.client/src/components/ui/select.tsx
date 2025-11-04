@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 export interface SelectProps
   extends React.SelectHTMLAttributes<HTMLSelectElement> {}
 
+// Main Select component (acts as the wrapper)
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, ...props }, ref) => {
     return (
@@ -22,4 +23,36 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
 )
 Select.displayName = "Select"
 
-export { Select }
+// SelectTrigger - for native select, this is just a pass-through wrapper
+const SelectTrigger = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ children, ...props }, ref) => {
+    return <div ref={ref} {...props}>{children}</div>
+  }
+)
+SelectTrigger.displayName = "SelectTrigger"
+
+// SelectValue - placeholder component, not used in native select
+const SelectValue = ({ placeholder }: { placeholder?: string }) => {
+  return null // Native select handles placeholder via option
+}
+SelectValue.displayName = "SelectValue"
+
+// SelectContent - for native select, this is just a pass-through wrapper
+const SelectContent = ({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>
+}
+SelectContent.displayName = "SelectContent"
+
+// SelectItem - maps to option element
+const SelectItem = React.forwardRef<HTMLOptionElement, React.OptionHTMLAttributes<HTMLOptionElement>>(
+  ({ children, ...props }, ref) => {
+    return (
+      <option ref={ref} {...props}>
+        {children}
+      </option>
+    )
+  }
+)
+SelectItem.displayName = "SelectItem"
+
+export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem }

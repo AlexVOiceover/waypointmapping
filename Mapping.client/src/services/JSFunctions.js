@@ -106,7 +106,7 @@ export const GenerateWaypointInfoboxText = (waypointMarker) => {
 
 };
 
-export const GenerateShapeInfoboxText = (shape) => {
+export const GenerateShapeInfoboxText = () => {
     return `<div class="text-center"><h4>Generate Waypoints For Shape?</h4>
     <button class="btn btn-success" onclick="submitFormFetch()">Generate</button><span>   </span>
     <button class="btn btn-danger" onclick="ShapeEditiorRemove()">Remove</button></div>`;

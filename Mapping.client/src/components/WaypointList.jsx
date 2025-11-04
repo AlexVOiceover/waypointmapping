@@ -1,18 +1,11 @@
-import React from 'react';
 import PropTypes from 'prop-types';
-import { WaypointActions } from './WaypointInfoBox';
-
-// Convert action code to human-readable name
-const getActionName = (actionCode) => {
-  const actionMap = {
-    [WaypointActions.NO_ACTION]: 'No Action',
-    [WaypointActions.TAKE_PHOTO]: 'Take Photo',
-    [WaypointActions.START_RECORD]: 'Start Recording',
-    [WaypointActions.STOP_RECORD]: 'Stop Recording'
-  };
-  
-  return actionMap[actionCode] || actionCode;
-};
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { tableStyles, iconStyles } from '@/lib/styles';
+import { cn } from '@/lib/utils';
+import { ACTION_OPTIONS, ACTION_ICONS } from '@/lib/constants';
 
 // Function to calculate row class based on waypoint type
 const getRowClass = (waypoint, index, waypoints) => {
@@ -21,131 +14,126 @@ const getRowClass = (waypoint, index, waypoints) => {
     index === waypoints.length - 1 || 
     (index > 0 && index < waypoints.length - 1 && hasSignificantHeadingChange(waypoints[index-1], waypoint, waypoints[index+1]));
   
-  return isVertex ? 'table-warning' : '';
+  return isVertex ? 'bg-yellow-50' : '';
 };
 
 // Function to check if there's a significant heading change (to detect vertices)
 const hasSignificantHeadingChange = (prev, current, next) => {
   if (!prev || !next) return false;
   
-  // Simple check - if we had proper heading values we'd use those instead
   const angle1 = Math.atan2(current.lat - prev.lat, current.lng - prev.lng) * 180 / Math.PI;
   const angle2 = Math.atan2(next.lat - current.lat, next.lng - current.lng) * 180 / Math.PI;
   
   const change = Math.abs((angle2 - angle1 + 180) % 360 - 180);
-  return change > 15; // Arbitrary threshold for heading change
+  return change > 15;
 };
 
 const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
-  // Handle field updates
   const handleFieldChange = (id, field, value) => {
     onUpdate(id, { [field]: field === 'action' ? value : parseFloat(value) });
   };
 
-  // Handle waypoint deletion
   const handleDelete = (id) => {
     onDelete(id);
   };
 
   return (
-    <div className="waypoints-table mt-4">
-      <h4>Waypoints</h4>
+    <div className="mt-4">
+      <h4 className="mb-3 text-lg font-semibold text-gray-900">Waypoints</h4>
       {waypoints.length === 0 ? (
-        <p className="text-muted">No waypoints available</p>
+        <p className="text-gray-500">No waypoints available</p>
       ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-hover">
-            <thead className="thead-light">
+        <div className={tableStyles.container}>
+          <table className={tableStyles.table}>
+            <thead className={tableStyles.thead}>
               <tr>
-                <th>ID</th>
-                <th>Lat</th>
-                <th>Lng</th>
-                <th>Alt (m)</th>
-                <th>Speed (m/s)</th>
-                <th>Heading</th>
-                <th>G. Angle</th>
-                <th>Action</th>
-                <th>Actions</th>
+                <th className={tableStyles.th}>ID</th>
+                <th className={tableStyles.th}>Lat</th>
+                <th className={tableStyles.th}>Lng</th>
+                <th className={tableStyles.th}>Alt (m)</th>
+                <th className={tableStyles.th}>Speed</th>
+                <th className={tableStyles.th}>Heading</th>
+                <th className={tableStyles.th}>G. Angle</th>
+                <th className={tableStyles.th}>Action</th>
+                <th className={tableStyles.th}>Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className={tableStyles.tbody}>
               {waypoints.map((wp, index) => (
-                <tr key={wp.id} className={getRowClass(wp, index, waypoints)}>
-                  <td>{wp.id}</td>
-                  <td>{wp.lat.toFixed(6)}</td>
-                  <td>{wp.lng.toFixed(6)}</td>
-                  <td>
-                    <input
+                <tr key={wp.id} className={cn(getRowClass(wp, index, waypoints), tableStyles.rowHover)}>
+                  <td className={tableStyles.cellText}>{wp.id}</td>
+                  <td className={tableStyles.cellSubtext}>{wp.lat.toFixed(6)}</td>
+                  <td className={tableStyles.cellSubtext}>{wp.lng.toFixed(6)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <Input
                       type="number"
-                      className="form-control form-control-sm"
+                      className="w-20 h-7 text-xs"
                       value={wp.altitude}
                       onChange={(e) => handleFieldChange(wp.id, 'altitude', e.target.value)}
                     />
                   </td>
-                  <td>
-                    <input
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <Input
                       type="number"
-                      className="form-control form-control-sm"
+                      className="w-16 h-7 text-xs"
                       value={wp.speed}
                       onChange={(e) => handleFieldChange(wp.id, 'speed', e.target.value)}
                     />
                   </td>
-                  <td>
-                    <div className="d-flex align-items-center">
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
                       <div 
-                        className="waypoint-heading-indicator me-2" 
-                        style={{ 
-                          transform: `rotate(${wp.heading}deg)`,
-                          fontSize: '14px' 
-                        }}
+                        className="text-sm transition-transform" 
+                        style={{ transform: `rotate(${wp.heading}deg)` }}
                       >
                         ➤
                       </div>
-                      <input
+                      <Input
                         type="number"
-                        className="form-control form-control-sm"
+                        className="w-16 h-7 text-xs"
                         value={wp.heading}
                         onChange={(e) => handleFieldChange(wp.id, 'heading', e.target.value)}
                       />
                     </div>
                   </td>
-                  <td>
-                    <input
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <Input
                       type="number"
-                      className="form-control form-control-sm"
+                      className="w-16 h-7 text-xs"
                       value={wp.angle}
                       onChange={(e) => handleFieldChange(wp.id, 'angle', e.target.value)}
                     />
                   </td>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <select
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <Select
                         value={wp.action}
-                        className="form-select form-select-sm"
+                        className="w-32 h-7 text-xs"
                         onChange={(e) => handleFieldChange(wp.id, 'action', e.target.value)}
                       >
-                        <option value={WaypointActions.NO_ACTION}>No Action</option>
-                        <option value={WaypointActions.TAKE_PHOTO}>Take Photo</option>
-                        <option value={WaypointActions.START_RECORD}>Start Recording</option>
-                        <option value={WaypointActions.STOP_RECORD}>Stop Recording</option>
-                      </select>
-                      <div className="ms-1">
-                        {wp.action === WaypointActions.TAKE_PHOTO && <span>📷</span>}
-                        {wp.action === WaypointActions.START_RECORD && <span>🎬</span>}
-                        {wp.action === WaypointActions.STOP_RECORD && <span>⏹️</span>}
-                      </div>
+                        {ACTION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </Select>
+                      <span className="text-sm">
+                        {ACTION_ICONS[wp.action]}
+                      </span>
                     </div>
                   </td>
-                  <td>
-                    <div className="d-flex">
-                      <button 
-                        className="btn btn-danger btn-sm"
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="h-7 w-7 p-0"
                         onClick={() => handleDelete(wp.id)}
                       >
-                        <i className="bi bi-trash"></i>
-                      </button>
+                        <Trash2 className={iconStyles.small} />
+                      </Button>
                       <span 
-                        className="badge ms-1" 
+                        className="inline-block px-1.5 py-0.5 text-xs font-medium text-white rounded"
                         style={{
                           backgroundColor: index === 0 || index === waypoints.length - 1 ? '#FF4500' : 
                             getRowClass(wp, index, waypoints) ? '#FFC107' : '#3CB371'
@@ -172,7 +160,6 @@ const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
   );
 };
 
-// Add PropTypes for better type checking
 WaypointList.propTypes = {
   waypoints: PropTypes.arrayOf(
     PropTypes.shape({

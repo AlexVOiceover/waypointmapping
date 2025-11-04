@@ -1,22 +1,15 @@
-import React, { useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Ensure Bootstrap is imported
+import { useState } from 'react';
 import PropTypes from 'prop-types';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { badgeStyles } from '@/lib/styles';
+import { cn } from '@/lib/utils';
+import { WaypointActions, ACTION_OPTIONS, ACTION_ICONS, ACTION_BADGE_COLORS } from '@/lib/constants';
 
-// Waypoint actions enum for consistency
-export const WaypointActions = {
-    NO_ACTION: 'noAction',
-    TAKE_PHOTO: 'takePhoto',
-    START_RECORD: 'startRecord',
-    STOP_RECORD: 'stopRecord'
-};
-
-// Action options mapping for dropdown
-const ACTION_OPTIONS = [
-    { value: WaypointActions.NO_ACTION, label: 'No Action' },
-    { value: WaypointActions.TAKE_PHOTO, label: 'Take Picture' },
-    { value: WaypointActions.START_RECORD, label: 'Start Recording' },
-    { value: WaypointActions.STOP_RECORD, label: 'Stop Recording' }
-];
+// Re-export for backward compatibility
+export { WaypointActions };
 
 const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
     const [formData, setFormData] = useState({
@@ -59,23 +52,23 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
     };
 
     return (
-        <div className="waypoint-info-box p-3 bg-light border rounded">
-            <h4 className="mb-3">Edit Waypoint {waypoint.id}</h4>
-            <div className="mb-1 text-secondary">
+        <div className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <h4 className="mb-3 text-lg font-semibold text-gray-900">Edit Waypoint {waypoint.id}</h4>
+            <div className="mb-2 text-sm text-gray-600">
                 Location: {formatCoordinate(waypoint.lat)}, {formatCoordinate(waypoint.lng)}
             </div>
 
             {/* Add heading visualization */}
-            <div className="d-flex align-items-center mb-3">
+            <div className="flex items-center mb-3">
                 <div 
-                    className="waypoint-heading-indicator" 
+                    className="text-2xl transition-transform"
                     style={{ transform: `rotate(${formData.heading}deg)` }}
                     title={`Heading: ${formData.heading}°`}
                 >
                     ➤
                 </div>
-                <div className="ms-2">
-                    <small className="text-muted">
+                <div className="ml-2">
+                    <small className="text-sm text-gray-500">
                         Heading: {formData.heading}° | 
                         Distance to next: {calculateDistanceToNextWaypoint()}
                     </small>
@@ -83,93 +76,90 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
             </div>
 
             {/* Add a waypoint type indicator */}
-            <div className="badge bg-info mb-3">
+            <div className={cn(badgeStyles.base, badgeStyles.blue, 'mb-3')}>
                 {waypoint.isVertex ? 'Vertex Waypoint' : 'Intermediate Waypoint'}
             </div>
 
-            <div className="form-group mb-3">
-                <label htmlFor="altitude" className="form-label">Altitude (m)</label>
-                <input
-                    id="altitude"
-                    type="number"
-                    className="form-control"
-                    value={formData.altitude}
-                    onChange={handleChange}
-                />
-            </div>
-
-            <div className="form-group mb-3">
-                <label htmlFor="speed" className="form-label">Speed (m/s)</label>
-                <input
-                    id="speed"
-                    type="number"
-                    className="form-control"
-                    value={formData.speed}
-                    onChange={handleChange}
-                />
-            </div>
-
-            <div className="form-group mb-3">
-                <label htmlFor="angle" className="form-label">Gimbal Angle (degrees)</label>
-                <input
-                    id="angle"
-                    type="number"
-                    className="form-control"
-                    value={formData.angle}
-                    onChange={handleChange}
-                />
-            </div>
-
-            <div className="form-group mb-3">
-                <label htmlFor="heading" className="form-label">Heading (degrees North)</label>
-                <input
-                    id="heading"
-                    type="number"
-                    className="form-control"
-                    value={formData.heading}
-                    onChange={handleChange}
-                />
-            </div>
-
-            <div className="form-group mb-3">
-                <label htmlFor="action" className="form-label">Action</label>
-                <div className="d-flex align-items-center">
-                    <select
-                        id="action"
-                        className="form-select"
-                        value={formData.action}
+            <div className="space-y-3">
+                <div className="space-y-2">
+                    <Label htmlFor="altitude">Altitude (m)</Label>
+                    <Input
+                        id="altitude"
+                        type="number"
+                        value={formData.altitude}
                         onChange={handleChange}
-                    >
-                        {ACTION_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                    <div className="ms-2">
-                        {formData.action === WaypointActions.TAKE_PHOTO && 
-                            <span className="badge bg-primary">📷</span>}
-                        {formData.action === WaypointActions.START_RECORD && 
-                            <span className="badge bg-danger">🎬</span>}
-                        {formData.action === WaypointActions.STOP_RECORD && 
-                            <span className="badge bg-warning">⏹️</span>}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="speed">Speed (m/s)</Label>
+                    <Input
+                        id="speed"
+                        type="number"
+                        value={formData.speed}
+                        onChange={handleChange}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="angle">Gimbal Angle (degrees)</Label>
+                    <Input
+                        id="angle"
+                        type="number"
+                        value={formData.angle}
+                        onChange={handleChange}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="heading">Heading (degrees North)</Label>
+                    <Input
+                        id="heading"
+                        type="number"
+                        value={formData.heading}
+                        onChange={handleChange}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="action">Action</Label>
+                    <div className="flex items-center gap-2">
+                        <Select
+                            id="action"
+                            value={formData.action}
+                            onChange={handleChange}
+                        >
+                            {ACTION_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </Select>
+                        <div>
+                            {ACTION_ICONS[formData.action] && (
+                                <span className={cn(badgeStyles.base, badgeStyles[ACTION_BADGE_COLORS[formData.action]])}>
+                                    {ACTION_ICONS[formData.action]}
+                                </span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="d-flex justify-content-between mt-4">
-                <button
+            <div className="flex justify-between mt-4 gap-2">
+                <Button
                     onClick={handleSave}
-                    className="btn btn-primary"
+                    className="flex-1"
                 >
                     Save
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={handleRemove}
-                    className="btn btn-danger"
+                    variant="destructive"
+                    className="flex-1"
                 >
                     Remove
-                </button>
+                </Button>
             </div>
         </div>
     );
@@ -185,7 +175,8 @@ WaypointInfoBox.propTypes = {
         speed: PropTypes.number.isRequired,
         angle: PropTypes.number.isRequired,
         heading: PropTypes.number.isRequired,
-        action: PropTypes.string.isRequired
+        action: PropTypes.string.isRequired,
+        isVertex: PropTypes.bool
     }).isRequired,
     onSave: PropTypes.func.isRequired,
     onRemove: PropTypes.func.isRequired

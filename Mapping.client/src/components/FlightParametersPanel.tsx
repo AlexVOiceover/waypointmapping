@@ -1,22 +1,17 @@
-import React, { useRef } from 'react';
+import { useMapContext } from '@/context/MapContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select } from '@/components/ui/select';
-import type { FlightParameters } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ACTION_OPTIONS } from '@/lib/constants';
 
-interface FlightParametersPanelProps {
-  flightParameters: FlightParameters;
-  onValueChange: (field: string, value: string) => void;
-}
+type SetterFunction = (value: number | boolean | string) => void;
 
 /**
  * Component for displaying and editing flight parameters
  */
-const FlightParametersPanel: React.FC<FlightParametersPanelProps> = ({
-  flightParameters,
-  onValueChange
-}) => {
+const FlightParametersPanel: React.FC = () => {
+  const { flightParams } = useMapContext();
   const {
     altitude,
     speed,
@@ -30,44 +25,52 @@ const FlightParametersPanel: React.FC<FlightParametersPanelProps> = ({
     isNorthSouth,
     useEndpointsOnly,
     allPointsAction,
+    setAltitude,
+    setSpeed,
+    setAngle,
+    setFocalLength,
+    setSensorWidth,
+    setSensorHeight,
+    setPhotoInterval,
+    setOverlap,
+    setInDistance,
+    setIsNorthSouth,
     setUseEndpointsOnly,
-    setIsNorthSouth
-  } = flightParameters;
+    setAllPointsAction
+  } = flightParams;
 
-  const checkboxRef = useRef<HTMLInputElement>(null);
-  const northSouthCheckboxRef = useRef<HTMLInputElement>(null);
-
-  // Direct DOM manipulation to force checkbox state
-  const handleEndpointsOnlyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.checked;
-    console.log(`Direct checkbox change to: ${newValue} (${typeof newValue})`);
-
-    // Force the checkbox checked state via DOM - do this first
-    if (checkboxRef.current) {
-      checkboxRef.current.checked = newValue;
-    }
-
-    // Then update the React state with the explicit boolean value
-    setUseEndpointsOnly(newValue === true);
-
-    console.log('After setting, checkbox.checked =', checkboxRef.current?.checked);
+  // Map field names to their setter functions and types
+  const fieldSetters: Record<string, { setter: SetterFunction; type: 'number' | 'boolean' | 'string' }> = {
+    altitude: { setter: setAltitude, type: 'number' },
+    speed: { setter: setSpeed, type: 'number' },
+    angle: { setter: setAngle, type: 'number' },
+    focalLength: { setter: setFocalLength, type: 'number' },
+    sensorWidth: { setter: setSensorWidth, type: 'number' },
+    sensorHeight: { setter: setSensorHeight, type: 'number' },
+    photoInterval: { setter: setPhotoInterval, type: 'number' },
+    overlap: { setter: setOverlap, type: 'number' },
+    inDistance: { setter: setInDistance, type: 'number' },
+    isNorthSouth: { setter: setIsNorthSouth, type: 'boolean' },
+    useEndpointsOnly: { setter: setUseEndpointsOnly, type: 'boolean' },
+    allPointsAction: { setter: setAllPointsAction, type: 'string' },
   };
 
-  // Direct DOM manipulation to force North-South checkbox state
-  const handleNorthSouthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.checked;
-    console.log(`North-South checkbox change to: ${newValue} (${typeof newValue})`);
+  const onValueChange = (field: string, value: string | boolean) => {
+    const fieldConfig = fieldSetters[field];
+    if (!fieldConfig) return;
 
-    // Force the checkbox checked state via DOM - do this first
-    if (northSouthCheckboxRef.current) {
-      northSouthCheckboxRef.current.checked = newValue;
+    const { setter, type } = fieldConfig;
+
+    if (type === 'number') {
+      setter(Number(value));
+    } else if (type === 'boolean') {
+      setter(Boolean(value));
+    } else {
+      setter(String(value));
     }
-
-    // Then update the React state with the explicit boolean value
-    setIsNorthSouth(newValue === true);
-
-    console.log('After setting, N-S checkbox.checked =', northSouthCheckboxRef.current?.checked);
   };
+
+
 
   return (
     <div className="space-y-6 p-4">
@@ -174,19 +177,23 @@ const FlightParametersPanel: React.FC<FlightParametersPanelProps> = ({
         </h3>
 
         <div className="space-y-3">
+        <div className="flex items-center space-x-2">
           <Checkbox
-            ref={northSouthCheckboxRef}
+            id="isNorthSouth"
             checked={isNorthSouth}
-            onChange={handleNorthSouthChange}
-            label="North-South Direction"
+            onCheckedChange={(checked) => onValueChange('isNorthSouth', checked)}
           />
+          <Label htmlFor="isNorthSouth">North-South Direction</Label>
+        </div>
 
+        <div className="flex items-center space-x-2">
           <Checkbox
-            ref={checkboxRef}
+            id="useEndpointsOnly"
             checked={useEndpointsOnly}
-            onChange={handleEndpointsOnlyChange}
-            label="Use Endpoints Only"
+            onCheckedChange={(checked) => onValueChange('useEndpointsOnly', checked)}
           />
+          <Label htmlFor="useEndpointsOnly">Use Endpoints Only</Label>
+        </div>
         </div>
       </div>
 
@@ -240,15 +247,17 @@ const FlightParametersPanel: React.FC<FlightParametersPanelProps> = ({
             <Label htmlFor="allPointsAction" className="text-foreground">
               Waypoint Action
             </Label>
-            <Select
-              id="allPointsAction"
-              value={allPointsAction}
-              onChange={(e) => onValueChange('allPointsAction', e.target.value)}
-            >
-              <option value="noAction">No Action</option>
-              <option value="takePhoto">Take Photo</option>
-              <option value="startRecord">Start Recording</option>
-              <option value="stopRecord">Stop Recording</option>
+            <Select onValueChange={(value) => onValueChange('allPointsAction', value)} value={allPointsAction}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select an action" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTION_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
         </div>

@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply h-screen overflow-hidden;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body > #root > div {
+    height: 100vh;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Map toolbar panel - ensure solid background */
+  .map-toolbar-panel {
+    background: linear-gradient(to bottom,
+      hsl(var(--background)) 0%,
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Google Maps controls adjustment - prevent overlap */
+  .gm-style .gm-style-mtc {
+    margin-top: 10px;
+    margin-right: 240px; /* Space for our toolbar */
+  }
+
+  /* Custom styles for info windows */
+  .info-window {
+    @apply p-4 max-w-xs bg-white rounded-lg shadow-lg;
+  }
+
+  .info-window label {
+    @apply block mb-1 font-bold text-gray-700;
+  }
+
+  .info-window input {
+    @apply w-full mb-2 p-2 border border-gray-300 rounded;
+  }
+
+  .info-window button {
+    @apply mr-1 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 font-semibold;
+  }
+
+  /* Waypoint styling */
+  .vertex-waypoint {
+    @apply border-4 border-red-500 bg-red-500/70 rounded-full;
+  }
+
+  .interpolated-waypoint {
+    @apply border-2 border-green-500 bg-green-500/70 rounded-full;
+  }
+
+  .waypoint-heading-indicator {
+    @apply inline-block text-2xl mr-2 text-blue-500 transition-transform duration-300 ease-in-out;
+  }
+
+  /* Toast notifications */
+  .toast-notification {
+    @apply fixed top-5 right-5 px-6 py-4 rounded-md z-50 text-white font-medium shadow-lg;
+    animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+  }
+
+  .toast-notification.success {
+    @apply bg-green-500;
+  }
+
+  .toast-notification.error {
+    @apply bg-red-500;
+  }
+
+  .toast-notification.info {
+    @apply bg-blue-500;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+  }
+}

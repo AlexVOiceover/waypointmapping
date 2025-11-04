@@ -1,0 +1,534 @@
+import { useCallback } from 'react';
+import { generateWaypoints } from '../services/WaypointService';
+import axios from 'axios';
+import { useMapContext } from '../context/MapContext';
+import { GenerateWaypointInfoboxText } from '../services/JSFunctions';
+
+// Get API base URL from environment variables
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+interface Coordinate {
+  Lat: number;
+  Lng: number;
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  Radius?: number;
+}
+
+interface WaypointRequestData {
+  Bounds: Coordinate[];
+  BoundsType: string;
+  StartingIndex?: number;
+  Altitude?: number;
+  Speed?: number;
+  Angle?: number;
+  PhotoInterval?: number;
+  Overlap?: number;
+  LineSpacing?: number;
+  IsNorthSouth?: boolean;
+  UseEndpointsOnly?: boolean;
+  AllPointsAction?: string;
+  FinalAction?: string;
+  FlipPath?: boolean;
+  UnitType?: number;
+  startingIndex?: number;
+  altitude?: number;
+  speed?: number;
+  angle?: number;
+  photoInterval?: number;
+  overlap?: number;
+  inDistance?: number;
+  isNorthSouth?: boolean;
+  NorthSouthDirection?: boolean;
+  useEndpointsOnly?: boolean;
+  allPointsAction?: string;
+  finalAction?: string;
+  flipPath?: boolean;
+  unitType?: number;
+}
+
+interface CleanRequestData {
+  Bounds: Coordinate[];
+  BoundsType: string;
+  StartingIndex: number;
+  Altitude: number;
+  Speed: number;
+  Angle: number;
+  PhotoInterval: number;
+  Overlap: number;
+  LineSpacing: number;
+  IsNorthSouth: boolean;
+  UseEndpointsOnly: boolean;
+  AllPointsAction: string;
+  Action: string;
+  FinalAction: string;
+  FlipPath: boolean;
+  UnitType: number;
+}
+
+interface WaypointPoint {
+  Lat?: number;
+  lat?: number;
+  Latitude?: number;
+  latitude?: number;
+  Lng?: number;
+  lng?: number;
+  Longitude?: number;
+  longitude?: number;
+  Index?: number;
+  index?: number;
+  Id?: number;
+  id?: number;
+  Alt?: number;
+  alt?: number;
+  Altitude?: number;
+  altitude?: number;
+  Speed?: number;
+  speed?: number;
+  Heading?: number;
+  heading?: number;
+  GimbalAngle?: number;
+  gimbalAngle?: number;
+  Action?: string;
+  action?: string;
+}
+
+interface ExtendedMarker extends google.maps.Marker {
+  lng: number;
+  lat: number;
+  altitude: number;
+  speed: number;
+  heading: number;
+  angle: number;
+  action: string;
+  id: number;
+}
+
+interface KMLRequestData {
+  FlyToWaylineMode: string;
+  FinishAction: string;
+  ExitOnRCLost: string;
+  ExecuteRCLostAction: string;
+  GlobalTransitionalSpeed: number;
+  DroneInfo: {
+    DroneEnumValue: number;
+    DroneSubEnumValue: number;
+  };
+  Waypoints: Array<{
+    Index: number;
+    Latitude: number;
+    Longitude: number;
+    ExecuteHeight: number;
+    WaypointSpeed: number;
+    WaypointHeadingMode: string;
+    WaypointHeadingAngle: number;
+    WaypointHeadingPathMode: string;
+    WaypointTurnMode: string;
+    WaypointTurnDampingDist: string;
+    Action: string;
+  }>;
+  ActionGroups: never[];
+}
+
+interface UseWaypointAPIReturn {
+  generateWaypointsFromAPI: (requestData: WaypointRequestData) => Promise<WaypointPoint[]>;
+  generateKml: (downloadLinkRef: React.RefObject<HTMLAnchorElement>) => Promise<void>;
+}
+
+/**
+ * Hook to handle all waypoint API operations
+ */
+export const useWaypointAPI = (): UseWaypointAPIReturn => {
+  const {
+    mapRef,
+    genInfoWindowRef,
+    redrawFlightPaths
+  } = useMapContext();
+
+  /**
+   * Generate waypoints from server
+   */
+  const generateWaypointsFromAPI = useCallback(async (requestData: WaypointRequestData): Promise<WaypointPoint[]> => {
+    try {
+      // Clone the request data to ensure we have a clean object without circular references
+      const cleanRequest: CleanRequestData = {
+        Bounds: Array.isArray(requestData.Bounds)
+          ? requestData.Bounds.map(coord => {
+              // Create a base coordinate with Lat/Lng
+              const cleanCoord: Coordinate = {
+                Lat: Number(coord.Lat || coord.lat || 0),
+                Lng: Number(coord.Lng || coord.lng || 0)
+              };
+
+              // For circle shapes, preserve the radius property
+              if (requestData.BoundsType === 'circle' && (coord.radius || coord.Radius)) {
+                cleanCoord.radius = Number(coord.radius || coord.Radius || 0);
+                cleanCoord.Radius = Number(coord.radius || coord.Radius || 0);
+              }
+
+              return cleanCoord;
+            })
+          : [],
+        BoundsType: String(requestData.BoundsType || ''),
+        StartingIndex: Number(requestData.StartingIndex || requestData.startingIndex || 1),
+        Altitude: Number(requestData.Altitude || requestData.altitude || 60),
+        Speed: Number(requestData.Speed || requestData.speed || 2.5),
+        Angle: Number(requestData.Angle || requestData.angle || -45),
+        PhotoInterval: Number(requestData.PhotoInterval || requestData.photoInterval || 2),
+        Overlap: Number(requestData.Overlap || requestData.overlap || 80),
+        LineSpacing: Number(requestData.LineSpacing || requestData.inDistance || 10),
+        IsNorthSouth: Boolean(requestData.IsNorthSouth || requestData.isNorthSouth || requestData.NorthSouthDirection),
+        UseEndpointsOnly: Boolean(requestData.UseEndpointsOnly || requestData.useEndpointsOnly),
+        AllPointsAction: String(requestData.AllPointsAction || requestData.allPointsAction || 'noAction'),
+        Action: String(requestData.AllPointsAction || requestData.allPointsAction || 'noAction'),
+        FinalAction: String(requestData.FinalAction || requestData.finalAction || '0'),
+        FlipPath: Boolean(requestData.FlipPath || requestData.flipPath || false),
+        UnitType: Number(requestData.UnitType || requestData.unitType || 0)
+      };
+
+      // For circle bounds, add the radius property to the first coordinate
+      if (cleanRequest.BoundsType === 'circle' && cleanRequest.Bounds.length > 0) {
+        // Verify that the original bounds has radius information
+        const originalBounds = requestData.Bounds;
+        if (originalBounds && originalBounds.length > 0 && originalBounds[0].radius) {
+          // Make sure we assign the exact radius from the original request
+          cleanRequest.Bounds[0].Radius = originalBounds[0].radius;
+
+          // Add both lowercase and uppercase properties to ensure compatibility
+          cleanRequest.Bounds[0].lat = cleanRequest.Bounds[0].Lat;
+          cleanRequest.Bounds[0].lng = cleanRequest.Bounds[0].Lng;
+          cleanRequest.Bounds[0].radius = cleanRequest.Bounds[0].Radius;
+        }
+      }
+
+      // Validate request data before sending
+      if (!cleanRequest.Bounds || cleanRequest.Bounds.length === 0) {
+        throw new Error('No bounds provided for waypoint generation');
+      }
+
+      if (!cleanRequest.BoundsType) {
+        throw new Error('Bounds type is required');
+      }
+
+      // CIRCLE SPECIFIC: Check for (0,0) coordinates which are definitely wrong
+      if (cleanRequest.BoundsType === 'circle' &&
+          cleanRequest.Bounds.length > 0 &&
+          cleanRequest.Bounds[0].Lat === 0 &&
+          cleanRequest.Bounds[0].Lng === 0) {
+
+        console.error('CRITICAL ERROR: Circle center is at (0,0) in final request.');
+
+        // Try to use the global cache if available
+        if ((window as any).lastCircleCenter) {
+          const cached = (window as any).lastCircleCenter;
+          cleanRequest.Bounds[0].Lat = cached.lat;
+          cleanRequest.Bounds[0].Lng = cached.lng;
+          cleanRequest.Bounds[0].radius = cached.radius;
+          cleanRequest.Bounds[0].Radius = cached.radius;
+        } else {
+          // Use a default location if all else fails
+          console.warn('No cached coordinates available. Using Helsinki as fallback location');
+          cleanRequest.Bounds[0].Lat = 60.1699;
+          cleanRequest.Bounds[0].Lng = 24.9384;
+        }
+      }
+
+      // Generate waypoints with clean data
+      const generatedPoints = await generateWaypoints(cleanRequest);
+
+      if (!generatedPoints || generatedPoints.length === 0) {
+        throw new Error('No waypoints returned from the server');
+      }
+
+      // Clear previous waypoints before adding new ones
+      if (mapRef.current && (mapRef.current as any).flags) {
+        // Remove existing markers
+        for (let i = 0; i < (mapRef.current as any).flags.length; i++) {
+          (mapRef.current as any).flags[i].setMap(null);
+        }
+        (mapRef.current as any).flags = [];
+      }
+
+      // Clear previous flight paths
+      if (mapRef.current && (mapRef.current as any).lines) {
+        // Remove existing polylines
+        for (let i = 0; i < (mapRef.current as any).lines.length; i++) {
+          (mapRef.current as any).lines[i].setMap(null);
+        }
+        (mapRef.current as any).lines = [];
+      }
+
+      const flightPoints: google.maps.LatLngLiteral[] = [];
+      const flagCount = cleanRequest.StartingIndex || 1;
+
+      // Process each waypoint returned from the API
+      for (let i = 0; i < generatedPoints.length; i++) {
+        const point = generatedPoints[i];
+
+        // Validate waypoint data
+        if (!point) {
+          console.error('Invalid waypoint data (null or undefined):', point);
+          continue;
+        }
+
+        // Handle both property naming conventions (Lat/Lng vs latitude/longitude)
+        const latitude = point.Lat !== undefined ? point.Lat :
+                        (point.lat !== undefined ? point.lat :
+                        (point.Latitude !== undefined ? point.Latitude :
+                        (point.latitude !== undefined ? point.latitude : null)));
+
+        const longitude = point.Lng !== undefined ? point.Lng :
+                         (point.lng !== undefined ? point.lng :
+                         (point.Longitude !== undefined ? point.Longitude :
+                         (point.longitude !== undefined ? point.longitude : null)));
+
+        if (latitude === null || longitude === null) {
+          console.error('Invalid waypoint coordinates:', point);
+          continue;
+        }
+
+        // Check for valid latitude/longitude ranges
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+          console.error(`Invalid coordinate range: lat=${latitude}, lng=${longitude}`);
+          continue;
+        }
+
+        // Get ID using various property names
+        const id = point.Index !== undefined ? point.Index :
+                  (point.index !== undefined ? point.index :
+                  (point.Id !== undefined ? point.Id :
+                  (point.id !== undefined ? point.id : i + 1)));
+
+        // Get altitude using various property names
+        const altitude = point.Alt !== undefined ? point.Alt :
+                        (point.alt !== undefined ? point.alt :
+                        (point.Altitude !== undefined ? point.Altitude :
+                        (point.altitude !== undefined ? point.altitude : 60)));
+
+        // Create marker icon
+        const responseMarker: google.maps.Symbol = {
+          path: 'M 230 80 A 45 45, 0, 1, 0, 275 125 L 275 80 Z',
+          fillOpacity: 0.8,
+          fillColor: 'blue',
+          anchor: new google.maps.Point(228, 125),
+          strokeWeight: 3,
+          strokeColor: 'white',
+          scale: 0.3,
+          rotation: (point.Heading || point.heading || 0) - 45,
+          labelOrigin: new google.maps.Point(228, 125),
+        };
+
+        // Create the marker
+        const genWaypointMarker = new google.maps.Marker({
+          position: {
+            lat: latitude,
+            lng: longitude
+          },
+          map: mapRef.current,
+          label: {
+            text: id.toString(),
+            color: "white"
+          },
+          draggable: true,
+          icon: responseMarker,
+        }) as ExtendedMarker;
+
+        // Store additional data on the marker
+        genWaypointMarker.id = id;
+        genWaypointMarker.lng = longitude;
+        genWaypointMarker.lat = latitude;
+        genWaypointMarker.altitude = altitude;
+        genWaypointMarker.speed = point.Speed || point.speed || 2.5;
+        genWaypointMarker.heading = point.Heading || point.heading || 0;
+        genWaypointMarker.angle = point.GimbalAngle || point.gimbalAngle || -45;
+        genWaypointMarker.action = point.Action || point.action || 'noAction';
+
+        // Add event listeners to the marker
+        google.maps.event.addListener(genWaypointMarker, "click", function (this: ExtendedMarker) {
+          if (genInfoWindowRef.current) {
+            genInfoWindowRef.current.close();
+            genInfoWindowRef.current.setContent(GenerateWaypointInfoboxText(this));
+            genInfoWindowRef.current.open(this.getMap(), this);
+          }
+
+          // Safely try to update form fields if they exist
+          try {
+            const selectedId = document.getElementById("selectedWaypointId");
+            if (selectedId) selectedId.innerHTML = this.id.toString();
+
+            const editAlt = document.getElementById("editWaypointAltitude") as HTMLInputElement;
+            if (editAlt) editAlt.value = this.altitude.toString();
+
+            const editSpeed = document.getElementById("editWaypointSpeed") as HTMLInputElement;
+            if (editSpeed) editSpeed.value = this.speed.toString();
+
+            const editAngle = document.getElementById("editWaypointAngle") as HTMLInputElement;
+            if (editAngle) editAngle.value = this.angle.toString();
+
+            const editHeading = document.getElementById("editWaypointHeading") as HTMLInputElement;
+            if (editHeading) editHeading.value = this.heading.toString();
+
+            const editAction = document.getElementById("editWaypointAction") as HTMLInputElement;
+            if (editAction) editAction.value = this.action;
+
+            const editId = document.getElementById("editWaypointID") as HTMLInputElement;
+            if (editId) editId.value = this.id.toString();
+          } catch (formError) {
+            console.error('Error updating waypoint form:', formError);
+          }
+        });
+
+        google.maps.event.addListener(genWaypointMarker, "mouseup", function () {
+          redrawFlightPaths();
+        });
+
+        google.maps.event.addListener(genWaypointMarker, 'dragend', function (this: ExtendedMarker) {
+          const position = this.getPosition();
+          if (position) {
+            this.lat = position.lat();
+            this.lng = position.lng();
+          }
+          if (genInfoWindowRef.current) {
+            genInfoWindowRef.current.close();
+            genInfoWindowRef.current.setContent(GenerateWaypointInfoboxText(this));
+            genInfoWindowRef.current.open(this.getMap(), this);
+          }
+        });
+
+        // Add the marker to the map's flags array
+        if (mapRef.current) {
+          if (!(mapRef.current as any).flags) {
+            (mapRef.current as any).flags = [];
+          }
+          (mapRef.current as any).flags.push(genWaypointMarker);
+        }
+        flightPoints.push({ lat: latitude, lng: longitude });
+      }
+
+      // Create a polyline connecting all waypoints
+      const flightPath = new google.maps.Polyline({
+        path: flightPoints,
+        geodesic: true,
+        strokeColor: "#FF0000",
+        strokeOpacity: 1.0,
+        strokeWeight: 2,
+      });
+
+      // Add the polyline to the map
+      if (mapRef.current) {
+        flightPath.setMap(mapRef.current);
+
+        // Store the polyline in the map's lines array
+        if (!(mapRef.current as any).lines) {
+          (mapRef.current as any).lines = [];
+        }
+        (mapRef.current as any).lines.push(flightPath);
+      }
+
+      try {
+        // Update starting index field if it exists
+        const startingIndexField = document.getElementById("in_startingIndex") as HTMLInputElement;
+        if (startingIndexField) {
+          startingIndexField.value = flagCount.toString();
+        }
+      } catch (error) {
+        console.error('Error updating starting index field:', error);
+      }
+
+      redrawFlightPaths();
+
+      return generatedPoints;
+    } catch (error: any) {
+      console.error('Error generating waypoints:', error);
+
+      // Log more detailed error information
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        throw error.response.data || 'Server error generating waypoints';
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        throw new Error('No response from server. Please check your connection.');
+      } else {
+        console.error('Error message:', error.message);
+        throw error;
+      }
+    }
+  }, [mapRef, genInfoWindowRef, redrawFlightPaths]);
+
+  /**
+   * Generate KML file for waypoints
+   */
+  const generateKml = useCallback(async (downloadLinkRef: React.RefObject<HTMLAnchorElement>): Promise<void> => {
+    if (!mapRef.current || !(mapRef.current as any).flags || (mapRef.current as any).flags.length === 0) {
+      alert('No waypoints to export');
+      return;
+    }
+
+    // Create a clean request object with only the properties we need
+    const requestData: KMLRequestData = {
+      FlyToWaylineMode: "safely",
+      FinishAction: "0",
+      ExitOnRCLost: "executeLostAction",
+      ExecuteRCLostAction: "goBack",
+      GlobalTransitionalSpeed: 2.5,
+      DroneInfo: {
+        DroneEnumValue: 1,
+        DroneSubEnumValue: 1
+      },
+      Waypoints: [],
+      ActionGroups: []
+    };
+
+    // Clean waypoints data to avoid circular references
+    requestData.Waypoints = (mapRef.current as any).flags.map((wp: ExtendedMarker, index: number) => {
+      return {
+        Index: index,
+        Latitude: Number(wp.lat || 0),
+        Longitude: Number(wp.lng || 0),
+        ExecuteHeight: Number(wp.altitude || 60),
+        WaypointSpeed: Number(wp.speed || 2.5),
+        WaypointHeadingMode: "smoothTransition",
+        WaypointHeadingAngle: Number(wp.heading || 0),
+        WaypointHeadingPathMode: "followBadArc",
+        WaypointTurnMode: "toPointAndStopWithContinuityCurvature",
+        WaypointTurnDampingDist: "0",
+        Action: String(wp.action || "noAction")
+      };
+    });
+
+    // Verify the data can be serialized
+    try {
+      JSON.stringify(requestData);
+    } catch (jsonError) {
+      console.error('Cannot serialize request data:', jsonError);
+      alert('Failed to prepare KML data - please try again');
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${apiBaseUrl}/api/KMZ/generate`, requestData, {
+        responseType: 'blob'
+      });
+
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = downloadLinkRef.current;
+      if (link) {
+        link.href = url;
+        link.setAttribute('download', 'generated.kml');
+        link.click();
+        window.URL.revokeObjectURL(url);
+      }
+    } catch (error) {
+      console.error('Error generating KML:', error);
+      alert('Error generating KML file. Check console for details.');
+    }
+  }, [mapRef]);
+
+  return {
+    generateWaypointsFromAPI,
+    generateKml
+  };
+};
