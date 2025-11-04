@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 
 const LocationButton = ({ map }) => {
   const handleCenterLocation = useCallback(() => {
+    if (!map) return;
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -22,6 +24,11 @@ const LocationButton = ({ map }) => {
       alert("Error: Your browser doesn't support geolocation.");
     }
   }, [map]);
+
+  // Don't render button until map is loaded
+  if (!map) {
+    return null;
+  }
 
   return (
     <button
@@ -48,7 +55,7 @@ const LocationButton = ({ map }) => {
 };
 
 LocationButton.propTypes = {
-  map: PropTypes.object.isRequired,
+  map: PropTypes.object,
 };
 
 export default LocationButton;

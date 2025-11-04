@@ -1,12 +1,68 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-export interface SelectProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {}
+interface SelectContextValue {
+  value?: string;
+  onValueChange?: (value: string) => void;
+}
 
-// Main Select component (acts as the wrapper)
+const SelectContext = React.createContext<SelectContextValue>({});
+
+export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  onValueChange?: (value: string) => void;
+}
+
+// Main Select component - supports both direct usage and wrapper pattern
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
+  ({ className, children, value, onChange, onValueChange, ...props }, ref) => {
+    // Check if children contain SelectTrigger (wrapper pattern) or direct options (direct pattern)
+    const hasSelectTrigger = React.Children.toArray(children).some(
+      child => React.isValidElement(child) && (child.type as any)?.displayName === 'SelectTrigger'
+    );
+
+    // Handler that supports both onChange and onValueChange
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (onChange) {
+        onChange(e);
+      }
+      if (onValueChange) {
+        onValueChange(e.target.value);
+      }
+    };
+
+    // Direct usage pattern (native select with options)
+    if (!hasSelectTrigger) {
+      return (
+        <select
+          className={cn(
+            "flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+          ref={ref}
+          value={value}
+          onChange={handleChange}
+          {...props}
+        >
+          {children}
+        </select>
+      )
+    }
+
+    // Wrapper pattern (with SelectTrigger, SelectContent, etc.)
+    return (
+      <SelectContext.Provider value={{ value: value as string, onValueChange }}>
+        {children}
+      </SelectContext.Provider>
+    )
+  }
+)
+Select.displayName = "Select"
+
+// SelectTrigger - renders the actual select element for wrapper pattern
+const SelectTrigger = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => {
+    const { value, onValueChange } = React.useContext(SelectContext);
+
     return (
       <select
         className={cn(
@@ -14,19 +70,13 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           className
         )}
         ref={ref}
+        value={value}
+        onChange={(e) => onValueChange?.(e.target.value)}
         {...props}
       >
         {children}
       </select>
     )
-  }
-)
-Select.displayName = "Select"
-
-// SelectTrigger - for native select, this is just a pass-through wrapper
-const SelectTrigger = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ children, ...props }, ref) => {
-    return <div ref={ref} {...props}>{children}</div>
   }
 )
 SelectTrigger.displayName = "SelectTrigger"

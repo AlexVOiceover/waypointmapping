@@ -143,4 +143,26 @@
     from { opacity: 1; transform: translateY(0); }
     to { opacity: 0; transform: translateY(-20px); }
   }
+
+  /* Google Places PlaceAutocompleteElement styling */
+  gmp-place-autocomplete {
+    width: 100%;
+    display: block;
+  }
+
+  /* Target the shadow DOM input using ::part if available */
+  gmp-place-autocomplete::part(input) {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.25rem !important;
+    padding: 0.5rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* Fallback: try to target the internal input with deep selectors */
+  gmp-place-autocomplete input {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
 }

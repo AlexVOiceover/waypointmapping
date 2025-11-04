@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useMapContext } from '@/context/MapContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select } from '@/components/ui/select';
 import { ACTION_OPTIONS } from '@/lib/constants';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 type SetterFunction = (value: number | boolean | string) => void;
 
@@ -12,6 +14,19 @@ type SetterFunction = (value: number | boolean | string) => void;
  */
 const FlightParametersPanel: React.FC = () => {
   const { flightParams } = useMapContext();
+  const [openSections, setOpenSections] = useState({
+    flightParams: true,
+    cameraSettings: true,
+    pathOptions: true,
+    photoSettings: true,
+  });
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   const {
     altitude,
     speed,
@@ -73,14 +88,18 @@ const FlightParametersPanel: React.FC = () => {
 
 
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-4 p-4">
       {/* Flight Parameters Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
-          Flight Parameters
-        </h3>
+      <div className="space-y-2">
+        <button
+          onClick={() => toggleSection('flightParams')}
+          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+        >
+          <span>Flight Parameters</span>
+          {openSections.flightParams ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
 
-        <div className="space-y-3">
+        {openSections.flightParams && <div className="space-y-3 pt-2">
           <div className="space-y-2">
             <Label htmlFor="altitude" className="text-foreground">
               Altitude (m)
@@ -119,16 +138,20 @@ const FlightParametersPanel: React.FC = () => {
               onChange={(e) => onValueChange('angle', e.target.value)}
             />
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Camera Settings Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
-          Camera Settings
-        </h3>
+      <div className="space-y-2">
+        <button
+          onClick={() => toggleSection('cameraSettings')}
+          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+        >
+          <span>Camera Settings</span>
+          {openSections.cameraSettings ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
 
-        <div className="space-y-3">
+        {openSections.cameraSettings && <div className="space-y-3 pt-2">
           <div className="space-y-2">
             <Label htmlFor="focalLength" className="text-foreground">
               Focal Length (mm)
@@ -167,16 +190,20 @@ const FlightParametersPanel: React.FC = () => {
               onChange={(e) => onValueChange('sensorHeight', e.target.value)}
             />
           </div>
-        </div>
+        </div>}
       </div>
 
       {/* Path Options Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
-          Path Options
-        </h3>
+      <div className="space-y-2">
+        <button
+          onClick={() => toggleSection('pathOptions')}
+          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+        >
+          <span>Path Options</span>
+          {openSections.pathOptions ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
 
-        <div className="space-y-3">
+        {openSections.pathOptions && <div className="space-y-3 pt-2">
         <div className="flex items-center space-x-2">
           <Checkbox
             id="isNorthSouth"
@@ -194,16 +221,20 @@ const FlightParametersPanel: React.FC = () => {
           />
           <Label htmlFor="useEndpointsOnly">Use Endpoints Only</Label>
         </div>
-        </div>
+        </div>}
       </div>
 
       {/* Photo Settings Section */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-foreground border-b border-border pb-2">
-          Photo Settings
-        </h3>
+      <div className="space-y-2">
+        <button
+          onClick={() => toggleSection('photoSettings')}
+          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+        >
+          <span>Photo Settings</span>
+          {openSections.photoSettings ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
 
-        <div className="space-y-3">
+        {openSections.photoSettings && <div className="space-y-3 pt-2">
           <div className="space-y-2">
             <Label htmlFor="photoInterval" className="text-foreground">
               Photo Interval (s)
@@ -247,20 +278,18 @@ const FlightParametersPanel: React.FC = () => {
             <Label htmlFor="allPointsAction" className="text-foreground">
               Waypoint Action
             </Label>
-            <Select onValueChange={(value) => onValueChange('allPointsAction', value)} value={allPointsAction}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select an action" />
-              </SelectTrigger>
-              <SelectContent>
-                {ACTION_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
+            <Select
+              onValueChange={(value) => onValueChange('allPointsAction', value)}
+              value={allPointsAction}
+            >
+              {ACTION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </Select>
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

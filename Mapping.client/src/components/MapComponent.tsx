@@ -239,23 +239,180 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   }, [setPath]);
 
   useEffect(() => {
-    if (mapInstance && inputRef.current) {
+    if (mapInstance) {
       mapInstance.addListener('click', handleMapClick);
-      const searchBox = new window.google.maps.places.SearchBox(inputRef.current);
-      mapInstance.addListener('bounds_changed', () => {
-        searchBox.setBounds(mapInstance.getBounds());
-      });
-      searchBox.addListener('places_changed', () => {
-        const places = searchBox.getPlaces();
-        if (places.length === 0) return;
-        const place = places[0];
-        if (place.geometry) {
-          mapInstance.setCenter(place.geometry.location);
-          mapInstance.setZoom(15);
-        }
-      });
     }
-  }, [mapInstance, inputRef, handleMapClick]);
+  }, [mapInstance, handleMapClick]);
+
+  // Setup Place Autocomplete Element (modern web component approach)
+  useEffect(() => {
+    if (!mapInstance || !inputRef.current) {
+      console.log('Autocomplete init skipped - missing mapInstance or inputRef');
+      return;
+    }
+
+    console.log('Initializing PlaceAutocompleteElement...');
+
+    // Use the new PlaceAutocompleteElement if available, fallback to legacy Autocomplete
+    const initPlaceAutocomplete = async () => {
+      try {
+        console.log('Loading places library...');
+        const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places") as google.maps.PlacesLibrary;
+        console.log('Places library loaded, PlaceAutocompleteElement:', PlaceAutocompleteElement);
+
+        if (PlaceAutocompleteElement && inputRef.current) {
+          console.log('Creating PlaceAutocompleteElement...');
+          const autocompleteElement = new PlaceAutocompleteElement();
+          console.log('PlaceAutocompleteElement created:', autocompleteElement);
+
+          // Replace the input with the autocomplete element
+          const parentElement = inputRef.current.parentElement;
+          if (parentElement) {
+            // Copy classes from original input
+            autocompleteElement.className = inputRef.current.className;
+            autocompleteElement.setAttribute('placeholder', 'Search for a location');
+
+            // Apply custom styling using CSS custom properties for shadow DOM
+            const style = autocompleteElement.style as any;
+            style.setProperty('--gmp-input-background-color', '#ffffff');
+            style.setProperty('--gmp-input-text-color', '#000000');
+            style.setProperty('--gmp-input-border-color', '#d1d5db'); // gray-300
+            style.setProperty('--gmp-input-border-radius', '0.25rem'); // rounded
+            style.setProperty('--gmp-input-padding', '0.5rem'); // p-2
+            style.setProperty('--gmp-input-font-size', '1rem');
+            style.setProperty('--gmp-dropdown-background-color', '#ffffff');
+            style.setProperty('--gmp-dropdown-text-color', '#000000');
+
+            console.log('Replacing input with autocomplete element...');
+            // Replace input with autocomplete element
+            parentElement.replaceChild(autocompleteElement, inputRef.current);
+
+            // Update ref to point to new element
+            (inputRef as any).current = autocompleteElement;
+
+            // Try to access and style the shadow DOM input directly
+            setTimeout(() => {
+              try {
+                const shadowRoot = (autocompleteElement as any).shadowRoot;
+                if (shadowRoot) {
+                  const input = shadowRoot.querySelector('input');
+                  if (input) {
+                    console.log('Found shadow DOM input, applying styles...');
+                    input.style.backgroundColor = '#ffffff';
+                    input.style.color = '#000000';
+                    input.style.border = '1px solid #d1d5db';
+                    input.style.borderRadius = '0.25rem';
+                    input.style.padding = '0.5rem';
+                    input.style.fontSize = '1rem';
+                    input.style.width = '100%';
+                  }
+                }
+              } catch (error) {
+                console.warn('Could not access shadow DOM:', error);
+              }
+            }, 100);
+
+            // Handler function for place selection using the NEW gmp-select event
+            const handlePlaceSelect = async (event: any) => {
+              console.log('✅ Place selected event fired!', event);
+
+              // New API uses placePrediction instead of place
+              const placePrediction = event.placePrediction;
+              console.log('Place prediction:', placePrediction);
+
+              if (!placePrediction) {
+                console.error('❌ No placePrediction found in event');
+                return;
+              }
+
+              try {
+                // Convert placePrediction to Place object
+                console.log('Converting placePrediction to Place...');
+                const place = placePrediction.toPlace();
+                console.log('Place object:', place);
+
+                // Fetch fields to get location data
+                console.log('Fetching place fields...');
+                await place.fetchFields({
+                  fields: ['location', 'viewport', 'displayName', 'formattedAddress']
+                });
+
+                console.log('After fetchFields - location:', place.location);
+                console.log('After fetchFields - viewport:', place.viewport);
+
+                if (!place.location) {
+                  console.error("❌ No location found for place after fetch");
+                  return;
+                }
+
+                // Center map on the selected place
+                console.log('✅ Setting center to:', place.location);
+                mapInstance.setCenter(place.location);
+
+                // Zoom in if it's a specific location, zoom out if it's a large area
+                if (place.viewport) {
+                  console.log('✅ Fitting bounds to viewport');
+                  mapInstance.fitBounds(place.viewport);
+                } else {
+                  console.log('✅ Setting zoom to 15');
+                  mapInstance.setZoom(15);
+                }
+              } catch (error) {
+                console.error('❌ Error handling place selection:', error);
+              }
+            };
+
+            console.log('Adding gmp-select event listener (new API)...');
+            // Use the NEW gmp-select event (replaces gmp-placeselect)
+            autocompleteElement.addEventListener('gmp-select', handlePlaceSelect);
+
+            // Log the element for debugging
+            console.log('Autocomplete element:', autocompleteElement);
+
+            console.log('✅ PlaceAutocompleteElement setup complete!');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error in initPlaceAutocomplete:', error);
+        throw error;
+      }
+    };
+
+    initPlaceAutocomplete().catch(error => {
+      console.error('❌ PlaceAutocompleteElement failed, using fallback:', error);
+
+      // Fallback to legacy Autocomplete if PlaceAutocompleteElement fails
+      if (inputRef.current) {
+        console.log('Setting up legacy Autocomplete...');
+        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+          fields: ['geometry', 'name', 'formatted_address'],
+        });
+
+        autocomplete.bindTo('bounds', mapInstance);
+
+        autocomplete.addListener('place_changed', () => {
+          console.log('🔄 Legacy autocomplete place_changed event');
+          const place = autocomplete.getPlace();
+          console.log('Legacy place:', place);
+
+          if (!place.geometry || !place.geometry.location) {
+            console.log('No geometry in legacy place');
+            return;
+          }
+
+          console.log('Setting center (legacy):', place.geometry.location);
+          mapInstance.setCenter(place.geometry.location);
+
+          if (place.geometry.viewport) {
+            mapInstance.fitBounds(place.geometry.viewport);
+          } else {
+            mapInstance.setZoom(15);
+          }
+        });
+        console.log('✅ Legacy Autocomplete setup complete');
+      }
+    });
+  }, [mapInstance]);
 
   return (
     <>

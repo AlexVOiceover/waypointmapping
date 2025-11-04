@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, Circle, Pencil, Hand, Map, Download, Trash2 } from 'lucide-react';
+import { Square, Circle, Pencil, Hand, Map, Download, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface MapToolbarProps {
   onStopDrawing: () => void;
@@ -25,15 +26,33 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   onClearShapes,
   startingIndex = 1
 }) => {
+  const [openSections, setOpenSections] = useState({
+    drawingTools: true,
+    actions: true,
+  });
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   return (
     <div className="absolute top-24 right-5 z-1000 w-240px bg-white rounded-xl shadow-xl border border-gray-300">
       {/* Drawing Tools Section */}
       <div className="p-4 bg-blue-50 border-b border-gray-200">
-        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Pencil className="h-4 w-4 text-blue-600" />
-          <span className="text-gray-900">Drawing Tools</span>
-        </h4>
-        <div className="flex flex-col gap-2">
+        <button
+          onClick={() => toggleSection('drawingTools')}
+          className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-blue-600 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-blue-600" />
+            <span className="text-gray-900">Drawing Tools</span>
+          </div>
+          {openSections.drawingTools ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
+        {openSections.drawingTools && <div className="flex flex-col gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -70,17 +89,23 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
             <Hand className="mr-2 h-4 w-4" />
             Stop Drawing
           </Button>
-        </div>
+        </div>}
       </div>
 
       {/* Actions Section */}
       <div className="p-4 bg-green-50">
-        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Map className="h-4 w-4 text-green-600" />
-          <span className="text-gray-900">Actions</span>
-        </h4>
+        <button
+          onClick={() => toggleSection('actions')}
+          className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-green-600 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Map className="h-4 w-4 text-green-600" />
+            <span className="text-gray-900">Actions</span>
+          </div>
+          {openSections.actions ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+        </button>
         <input type="hidden" id="in_startingIndex" value={startingIndex} />
-        <div className="flex flex-col gap-2">
+        {openSections.actions && <div className="flex flex-col gap-2">
           <Button
             size="sm"
             onClick={onGenerateWaypoints}
@@ -107,7 +132,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
             <Trash2 className="mr-2 h-4 w-4" />
             Clear All
           </Button>
-        </div>
+        </div>}
       </div>
     </div>
   );
