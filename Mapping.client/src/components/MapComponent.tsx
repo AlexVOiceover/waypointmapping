@@ -1,9 +1,12 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, DrawingManager, Polyline } from '@react-google-maps/api';
+// @ts-expect-error - JS file without types
 import { validateAndCorrectCoordinates } from '../services/JSFunctions';
 import FlightParametersPanel from './FlightParametersPanel';
 import MapToolbar from './MapToolbar';
+// @ts-expect-error - JSX file without types
 import LocationButton from './LocationButton';
+// @ts-expect-error - JS file without types
 import { useDrawingManager } from '../hooks/useDrawingManager';
 import { useWaypointAPI } from '../hooks/useWaypointAPI';
 import { MapProvider, useMapContext } from '../context/MapContext';
@@ -46,6 +49,8 @@ interface MapInnerProps {
   inputRef: React.RefObject<HTMLInputElement>;
   downloadLinkRef: React.RefObject<HTMLAnchorElement>;
   mapInstance: google.maps.Map | null;
+  setLatitude: (lat: string) => void;
+  setLongitude: (lng: string) => void;
 }
 
 interface Coordinate {
@@ -57,7 +62,7 @@ interface Coordinate {
   Radius?: number;
 }
 
-const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInstance }) => {
+const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInstance, setLatitude, setLongitude }) => {
   const {
     path,
     setPath,
@@ -205,7 +210,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     try {
       const response = await generateWaypointsFromAPI(requestData);
 
-      if (response && response.waypoints) {
+      if (response && Array.isArray(response) && response.length > 0) {
         setStartingIndex(prev => prev + 1);
 
         if (selectedShape) {
@@ -253,10 +258,11 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
 
     console.log('Initializing PlaceAutocompleteElement...');
 
-    // Use the new PlaceAutocompleteElement if available, fallback to legacy Autocomplete
+    // Use the new PlaceAutocompleteElement
     const initPlaceAutocomplete = async () => {
       try {
         console.log('Loading places library...');
+        // @ts-expect-error - PlaceAutocompleteElement is not in the standard types
         const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places") as google.maps.PlacesLibrary;
         console.log('Places library loaded, PlaceAutocompleteElement:', PlaceAutocompleteElement);
 
@@ -272,45 +278,12 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
             autocompleteElement.className = inputRef.current.className;
             autocompleteElement.setAttribute('placeholder', 'Search for a location');
 
-            // Apply custom styling using CSS custom properties for shadow DOM
-            const style = autocompleteElement.style as any;
-            style.setProperty('--gmp-input-background-color', '#ffffff');
-            style.setProperty('--gmp-input-text-color', '#000000');
-            style.setProperty('--gmp-input-border-color', '#d1d5db'); // gray-300
-            style.setProperty('--gmp-input-border-radius', '0.25rem'); // rounded
-            style.setProperty('--gmp-input-padding', '0.5rem'); // p-2
-            style.setProperty('--gmp-input-font-size', '1rem');
-            style.setProperty('--gmp-dropdown-background-color', '#ffffff');
-            style.setProperty('--gmp-dropdown-text-color', '#000000');
-
             console.log('Replacing input with autocomplete element...');
             // Replace input with autocomplete element
             parentElement.replaceChild(autocompleteElement, inputRef.current);
 
             // Update ref to point to new element
             (inputRef as any).current = autocompleteElement;
-
-            // Try to access and style the shadow DOM input directly
-            setTimeout(() => {
-              try {
-                const shadowRoot = (autocompleteElement as any).shadowRoot;
-                if (shadowRoot) {
-                  const input = shadowRoot.querySelector('input');
-                  if (input) {
-                    console.log('Found shadow DOM input, applying styles...');
-                    input.style.backgroundColor = '#ffffff';
-                    input.style.color = '#000000';
-                    input.style.border = '1px solid #d1d5db';
-                    input.style.borderRadius = '0.25rem';
-                    input.style.padding = '0.5rem';
-                    input.style.fontSize = '1rem';
-                    input.style.width = '100%';
-                  }
-                }
-              } catch (error) {
-                console.warn('Could not access shadow DOM:', error);
-              }
-            }, 100);
 
             // Handler function for place selection using the NEW gmp-select event
             const handlePlaceSelect = async (event: any) => {
@@ -344,6 +317,13 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
                   console.error("❌ No location found for place after fetch");
                   return;
                 }
+
+                // Update latitude and longitude fields
+                const lat = place.location.lat();
+                const lng = place.location.lng();
+                setLatitude(lat.toFixed(6));
+                setLongitude(lng.toFixed(6));
+                console.log('✅ Updated lat/lng fields:', lat, lng);
 
                 // Center map on the selected place
                 console.log('✅ Setting center to:', place.location);
@@ -379,44 +359,17 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     };
 
     initPlaceAutocomplete().catch(error => {
-      console.error('❌ PlaceAutocompleteElement failed, using fallback:', error);
-
-      // Fallback to legacy Autocomplete if PlaceAutocompleteElement fails
-      if (inputRef.current) {
-        console.log('Setting up legacy Autocomplete...');
-        const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
-          fields: ['geometry', 'name', 'formatted_address'],
-        });
-
-        autocomplete.bindTo('bounds', mapInstance);
-
-        autocomplete.addListener('place_changed', () => {
-          console.log('🔄 Legacy autocomplete place_changed event');
-          const place = autocomplete.getPlace();
-          console.log('Legacy place:', place);
-
-          if (!place.geometry || !place.geometry.location) {
-            console.log('No geometry in legacy place');
-            return;
-          }
-
-          console.log('Setting center (legacy):', place.geometry.location);
-          mapInstance.setCenter(place.geometry.location);
-
-          if (place.geometry.viewport) {
-            mapInstance.fitBounds(place.geometry.viewport);
-          } else {
-            mapInstance.setZoom(15);
-          }
-        });
-        console.log('✅ Legacy Autocomplete setup complete');
-      }
+      console.error('❌ PlaceAutocompleteElement failed:', error);
     });
   }, [mapInstance]);
 
   return (
     <>
-      <LocationButton map={mapInstance} />
+      <LocationButton
+        map={mapInstance}
+        setLatitude={setLatitude}
+        setLongitude={setLongitude}
+      />
       {path.length > 0 && (
         <Polyline
           path={path}
@@ -454,10 +407,37 @@ const MapComponent: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const downloadLinkRef = useRef<HTMLAnchorElement>(null);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
+  const [latitude, setLatitude] = useState<string>('');
+  const [longitude, setLongitude] = useState<string>('');
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
     setMapInstance(map);
   }, []);
+
+  const handleCenterByCoordinates = useCallback(() => {
+    if (!mapInstance || !latitude || !longitude) return;
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      alert('Please enter valid latitude and longitude values');
+      return;
+    }
+
+    if (lat < -90 || lat > 90) {
+      alert('Latitude must be between -90 and 90');
+      return;
+    }
+
+    if (lng < -180 || lng > 180) {
+      alert('Longitude must be between -180 and 180');
+      return;
+    }
+
+    mapInstance.setCenter({ lat, lng });
+    mapInstance.setZoom(15);
+  }, [mapInstance, latitude, longitude]);
 
   if (loadError) {
     return <div className="flex items-center justify-center h-screen">Error loading maps: {loadError.message}</div>;
@@ -478,6 +458,36 @@ const MapComponent: React.FC = () => {
             placeholder="Search for a location"
             className="w-full p-2 border border-gray-300 rounded mb-4"
           />
+
+          <div className="mb-4">
+            <div className="text-sm font-semibold text-gray-700 mb-2">Or enter coordinates:</div>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="number"
+                step="any"
+                placeholder="Latitude"
+                value={latitude}
+                onChange={(e) => setLatitude(e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+              />
+              <input
+                type="number"
+                step="any"
+                placeholder="Longitude"
+                value={longitude}
+                onChange={(e) => setLongitude(e.target.value)}
+                className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+              />
+            </div>
+            <button
+              onClick={handleCenterByCoordinates}
+              disabled={!latitude || !longitude}
+              className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+            >
+              Center Map
+            </button>
+          </div>
+
           <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
           <FlightParametersPanel />
         </div>
@@ -492,7 +502,7 @@ const MapComponent: React.FC = () => {
               mapTypeControl: true,
               mapTypeControlOptions: {
                 position: window.google?.maps?.ControlPosition?.TOP_LEFT || 1,
-                style: window.google?.maps?.MapTypeControlStyle?.HORIZONTAL_BAR || 0,
+                style: window.google?.maps?.MapTypeControlStyle?.DROPDOWN_MENU || 1,
               },
               scaleControl: true,
               streetViewControl: true,
@@ -501,7 +511,13 @@ const MapComponent: React.FC = () => {
               disableDefaultUI: false
             }}
           >
-            <MapInner inputRef={inputRef} downloadLinkRef={downloadLinkRef} mapInstance={mapInstance} />
+            <MapInner
+              inputRef={inputRef}
+              downloadLinkRef={downloadLinkRef}
+              mapInstance={mapInstance}
+              setLatitude={setLatitude}
+              setLongitude={setLongitude}
+            />
           </GoogleMap>
         </div>
       </div>

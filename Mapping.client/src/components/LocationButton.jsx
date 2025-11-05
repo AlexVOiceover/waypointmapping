@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import PropTypes from 'prop-types';
 
-const LocationButton = ({ map }) => {
+const LocationButton = ({ map, setLatitude, setLongitude }) => {
   const handleCenterLocation = useCallback(() => {
     if (!map) return;
 
@@ -12,6 +12,15 @@ const LocationButton = ({ map }) => {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
           };
+
+          // Update latitude and longitude fields
+          if (setLatitude) {
+            setLatitude(pos.lat.toFixed(6));
+          }
+          if (setLongitude) {
+            setLongitude(pos.lng.toFixed(6));
+          }
+
           map.setCenter(pos);
           map.setZoom(15);
         },
@@ -23,7 +32,7 @@ const LocationButton = ({ map }) => {
     } else {
       alert("Error: Your browser doesn't support geolocation.");
     }
-  }, [map]);
+  }, [map, setLatitude, setLongitude]);
 
   // Don't render button until map is loaded
   if (!map) {
@@ -56,6 +65,8 @@ const LocationButton = ({ map }) => {
 
 LocationButton.propTypes = {
   map: PropTypes.object,
+  setLatitude: PropTypes.func,
+  setLongitude: PropTypes.func,
 };
 
 export default LocationButton;

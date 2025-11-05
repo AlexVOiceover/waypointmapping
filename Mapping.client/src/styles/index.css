@@ -144,25 +144,31 @@
     to { opacity: 0; transform: translateY(-20px); }
   }
 
-  /* Google Places PlaceAutocompleteElement styling */
-  gmp-place-autocomplete {
-    width: 100%;
-    display: block;
+  /* Google Places Autocomplete dropdown styling */
+  .pac-container {
+    @apply bg-white border border-gray-300 rounded-md shadow-lg mt-1;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   }
 
-  /* Target the shadow DOM input using ::part if available */
-  gmp-place-autocomplete::part(input) {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border: 1px solid #d1d5db !important;
-    border-radius: 0.25rem !important;
-    padding: 0.5rem !important;
-    font-size: 1rem !important;
+  .pac-item {
+    @apply px-4 py-2 cursor-pointer border-b border-gray-100;
+    color: #000000;
   }
 
-  /* Fallback: try to target the internal input with deep selectors */
-  gmp-place-autocomplete input {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+  .pac-item:hover {
+    @apply bg-gray-100;
+  }
+
+  .pac-item-query {
+    @apply font-semibold;
+    color: #1f2937;
+  }
+
+  .pac-matched {
+    @apply font-bold;
+  }
+
+  .pac-icon {
+    display: none; /* Hide the default icon for cleaner look */
   }
 }
