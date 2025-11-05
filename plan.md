@@ -1,3 +1,3 @@
-Dropdowns
 Altitude
 Autolocation
+Buttons as latching

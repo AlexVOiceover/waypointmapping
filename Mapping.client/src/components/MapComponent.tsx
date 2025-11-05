@@ -76,22 +76,50 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   const { generateWaypointsFromAPI, generateKml } = useWaypointAPI();
   const [startingIndex, setStartingIndex] = useState(1);
   const [googleLoaded, setGoogleLoaded] = useState(false);
+  const [isProbeHeightActive, setIsProbeHeightActive] = useState(false);
+  const [activeDrawingMode, setActiveDrawingMode] = useState<string | null>(null);
+  const elevatorServiceRef = useRef<google.maps.ElevationService | null>(null);
 
   const handleDrawRectangle = useCallback(() => {
+    console.log('Rectangle drawing started - deactivating probe height');
+    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setActiveDrawingMode('rectangle');
     enableDrawingMode('rectangle');
   }, [enableDrawingMode]);
 
   const handleDrawCircle = useCallback(() => {
+    console.log('Circle drawing started - deactivating probe height');
+    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setActiveDrawingMode('circle');
     enableDrawingMode('circle');
   }, [enableDrawingMode]);
 
   const handleDrawPolyline = useCallback(() => {
+    console.log('Polyline drawing started - deactivating probe height');
+    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setActiveDrawingMode('polyline');
     enableDrawingMode('polyline');
   }, [enableDrawingMode]);
 
   const handleStopDrawing = useCallback(() => {
+    setActiveDrawingMode(null);
     stopDrawing();
   }, [stopDrawing]);
+
+  const handleProbeHeight = useCallback(() => {
+    const newState = !isProbeHeightActive;
+    console.log('Probe Height toggled. New state:', newState);
+
+    if (newState) {
+      // When activating probe height, stop any drawing mode first
+      console.log('Activating probe height - stopping drawing mode');
+      setActiveDrawingMode(null);
+      stopDrawing();
+    }
+
+    // Set state after stopping drawing to ensure proper order
+    setIsProbeHeightActive(newState);
+  }, [isProbeHeightActive, stopDrawing]);
 
   const handleDrawingManagerLoad = (drawingManager: google.maps.drawing.DrawingManager) => {
     onDrawingManagerLoad(drawingManager);
@@ -230,24 +258,113 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   useEffect(() => {
     if (window.google && window.google.maps && window.google.maps.drawing) {
       setGoogleLoaded(true);
+      // Initialize Elevation Service
+      if (!elevatorServiceRef.current) {
+        elevatorServiceRef.current = new window.google.maps.ElevationService();
+      }
     }
   }, []);
 
   const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const newPoint = {
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
-      };
-      setPath((prevPath) => [...prevPath, newPoint]);
+    if (!event.latLng) return;
+
+    console.log('Map clicked. Probe height active:', isProbeHeightActive);
+
+    // If probe height mode is active, get elevation
+    if (isProbeHeightActive && elevatorServiceRef.current) {
+      console.log('Probe height mode - fetching elevation');
+      const location = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+
+      elevatorServiceRef.current.getElevationForLocations(
+        {
+          locations: [location],
+        },
+        (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            const elevation = results[0].elevation;
+            const elevationMeters = elevation.toFixed(2);
+            const elevationFeet = (elevation * 3.28084).toFixed(2);
+
+            // Create info window to display elevation
+            const infoWindow = new window.google.maps.InfoWindow({
+              content: `
+                <div style="padding: 8px;">
+                  <h3 style="margin: 0 0 8px 0; font-weight: bold;">Elevation</h3>
+                  <p style="margin: 0;"><strong>Meters:</strong> ${elevationMeters} m</p>
+                  <p style="margin: 0;"><strong>Feet:</strong> ${elevationFeet} ft</p>
+                  <p style="margin: 4px 0 0 0; font-size: 0.9em; color: #666;">
+                    Lat: ${location.lat.toFixed(6)}, Lng: ${location.lng.toFixed(6)}
+                  </p>
+                </div>
+              `,
+              position: location,
+            });
+
+            if (mapInstance) {
+              infoWindow.open(mapInstance);
+            }
+          } else {
+            console.error('Elevation service failed:', status);
+            alert('Unable to retrieve elevation data. Status: ' + status);
+          }
+        }
+      );
+      return;
     }
-  }, [setPath]);
+
+    // Default behavior: add point to path
+    console.log('Adding point to path');
+    const newPoint = {
+      lat: event.latLng.lat(),
+      lng: event.latLng.lng(),
+    };
+    setPath((prevPath) => [...prevPath, newPoint]);
+  }, [setPath, isProbeHeightActive, mapInstance]);
 
   useEffect(() => {
-    if (mapInstance) {
-      mapInstance.addListener('click', handleMapClick);
-    }
+    if (!mapInstance) return;
+
+    const listener = mapInstance.addListener('click', handleMapClick);
+
+    // Cleanup function to remove listener when dependencies change
+    return () => {
+      if (listener) {
+        window.google.maps.event.removeListener(listener);
+      }
+    };
   }, [mapInstance, handleMapClick]);
+
+  // Change cursor when probe height is active
+  useEffect(() => {
+    if (mapInstance) {
+      const mapDiv = mapInstance.getDiv();
+      if (isProbeHeightActive) {
+        console.log('Setting cursor to crosshair for probe height mode');
+        // Use a precise crosshair cursor for elevation probing
+        // Set cursor with !important using style attribute
+        mapDiv.style.setProperty('cursor', 'crosshair', 'important');
+
+        // Also set cursor on all child elements to ensure it overrides DrawingManager
+        const allElements = mapDiv.querySelectorAll('*');
+        allElements.forEach((el: Element) => {
+          if (el instanceof HTMLElement) {
+            el.style.setProperty('cursor', 'crosshair', 'important');
+          }
+        });
+      } else {
+        console.log('Resetting cursor from probe height mode');
+        // Reset cursor
+        mapDiv.style.removeProperty('cursor');
+
+        const allElements = mapDiv.querySelectorAll('*');
+        allElements.forEach((el: Element) => {
+          if (el instanceof HTMLElement) {
+            el.style.removeProperty('cursor');
+          }
+        });
+      }
+    }
+  }, [mapInstance, isProbeHeightActive]);
 
   // Setup Place Autocomplete Element (modern web component approach)
   useEffect(() => {
@@ -393,6 +510,9 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         onDrawCircle={handleDrawCircle}
         onDrawPolyline={handleDrawPolyline}
         onClearShapes={clearAll}
+        onProbeHeight={handleProbeHeight}
+        isProbeHeightActive={isProbeHeightActive}
+        activeDrawingMode={activeDrawingMode}
         startingIndex={startingIndex}
       />
     </>
