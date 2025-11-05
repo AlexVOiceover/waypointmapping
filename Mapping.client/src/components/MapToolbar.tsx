@@ -39,7 +39,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   };
 
   return (
-    <div className="absolute top-24 right-5 z-1000 w-240px bg-white rounded-xl shadow-xl border border-gray-300">
+    <div className="absolute top-5 right-5 z-1000 w-60 bg-white rounded-xl shadow-xl border border-gray-300">
       {/* Drawing Tools Section */}
       <div className="p-4 bg-blue-50 border-b border-gray-200">
         <button

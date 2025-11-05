@@ -409,6 +409,7 @@ const MapComponent: React.FC = () => {
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [latitude, setLatitude] = useState<string>('');
   const [longitude, setLongitude] = useState<string>('');
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
     setMapInstance(map);
@@ -449,49 +450,94 @@ const MapComponent: React.FC = () => {
 
   return (
     <MapProvider>
-      <div className="flex h-screen">
-        <div className="w-1/4 p-4 bg-gray-100 overflow-y-auto">
-          <h2 className="text-lg font-bold mb-4">Drone Flight Planner</h2>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search for a location"
-            className="w-full p-2 border border-gray-300 rounded mb-4"
-          />
-
-          <div className="mb-4">
-            <div className="text-sm font-semibold text-gray-700 mb-2">Or enter coordinates:</div>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="number"
-                step="any"
-                placeholder="Latitude"
-                value={latitude}
-                onChange={(e) => setLatitude(e.target.value)}
-                className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
-              />
-              <input
-                type="number"
-                step="any"
-                placeholder="Longitude"
-                value={longitude}
-                onChange={(e) => setLongitude(e.target.value)}
-                className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
-              />
+      <div className="flex h-screen relative">
+        {/* Collapsible Side Panel */}
+        <div
+          className={`bg-gray-100 overflow-y-auto transition-all duration-300 ease-in-out ${
+            isPanelCollapsed ? 'w-0' : 'w-80'
+          }`}
+          style={{ minWidth: isPanelCollapsed ? '0' : undefined }}
+        >
+          <div className={`p-4 ${isPanelCollapsed ? 'hidden' : 'block'}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold">Drone Flight Planner</h2>
+              <button
+                onClick={() => setIsPanelCollapsed(true)}
+                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                title="Collapse panel"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
             </div>
-            <button
-              onClick={handleCenterByCoordinates}
-              disabled={!latitude || !longitude}
-              className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-            >
-              Center Map
-            </button>
-          </div>
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Search for a location"
+              className="w-full p-2 border border-gray-300 rounded mb-4"
+            />
 
-          <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
-          <FlightParametersPanel />
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-gray-700 mb-2">Or enter coordinates:</div>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Latitude"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Longitude"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+                />
+              </div>
+              <button
+                onClick={handleCenterByCoordinates}
+                disabled={!latitude || !longitude}
+                className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+              >
+                Center Map
+              </button>
+            </div>
+
+            <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
+            <FlightParametersPanel />
+          </div>
         </div>
-        <div className="w-3/4">
+
+        {/* Expand Button - shown when panel is collapsed */}
+        {isPanelCollapsed && (
+          <button
+            onClick={() => setIsPanelCollapsed(false)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-r-lg shadow-lg transition-colors border border-l-0 border-gray-300"
+            title="Expand panel"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
+        <div className={`transition-all duration-300 ease-in-out ${isPanelCollapsed ? 'w-full' : 'flex-1'}`}>
           <GoogleMap
             mapContainerClassName="w-full h-full"
             center={DEFAULT_CENTER}
@@ -507,7 +553,7 @@ const MapComponent: React.FC = () => {
               scaleControl: true,
               streetViewControl: true,
               rotateControl: true,
-              fullscreenControl: true,
+              fullscreenControl: false,
               disableDefaultUI: false
             }}
           >
