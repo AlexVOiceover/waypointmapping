@@ -8,6 +8,7 @@ import MapToolbar from './MapToolbar';
 import LocationButton from './LocationButton';
 import { useWaypointAPI } from '../hooks/useWaypointAPI';
 import { MapProvider, useMapContext } from '../context/MapContext';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 // Map configuration as static constants to prevent unnecessary reloads
 const LIBRARIES: ('places' | 'geometry')[] = ['places', 'geometry'];
@@ -739,6 +740,7 @@ const MapComponent: React.FC = () => {
   const [latitude, setLatitude] = useState<string>('');
   const [longitude, setLongitude] = useState<string>('');
   const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
+  const [isLocationExpanded, setIsLocationExpanded] = useState<boolean>(true);
 
   const handleMapLoad = useCallback((map: google.maps.Map) => {
     setMapInstance(map);
@@ -807,13 +809,20 @@ const MapComponent: React.FC = () => {
             <div>
               {/* Search and Coordinates Section */}
               <div className="bg-cyan-50 border-2 border-cyan-300 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <h3 className="text-sm font-bold text-gray-900">Location</h3>
-                </div>
-                <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setIsLocationExpanded(!isLocationExpanded)}
+                  className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-cyan-600 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span className="text-gray-900">Location</span>
+                  </div>
+                  {isLocationExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                </button>
+
+                {isLocationExpanded && <div className="flex flex-col gap-3 pt-3">
                   <input
                     ref={inputRef}
                     type="text"
@@ -848,7 +857,7 @@ const MapComponent: React.FC = () => {
                       Center Map
                     </button>
                   </div>
-                </div>
+                </div>}
               </div>
 
               {/* Flight Parameters Panel */}
