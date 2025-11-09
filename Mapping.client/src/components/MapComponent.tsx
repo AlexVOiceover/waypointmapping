@@ -1,48 +1,46 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { GoogleMap, useJsApiLoader, DrawingManager, Polyline } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Polyline } from '@react-google-maps/api';
 // @ts-expect-error - JS file without types
 import { validateAndCorrectCoordinates } from '../services/JSFunctions';
 import FlightParametersPanel from './FlightParametersPanel';
 import MapToolbar from './MapToolbar';
 // @ts-expect-error - JSX file without types
 import LocationButton from './LocationButton';
-// @ts-expect-error - JS file without types
-import { useDrawingManager } from '../hooks/useDrawingManager';
 import { useWaypointAPI } from '../hooks/useWaypointAPI';
 import { MapProvider, useMapContext } from '../context/MapContext';
 
 // Map configuration as static constants to prevent unnecessary reloads
-const LIBRARIES: ('drawing' | 'places')[] = ['drawing', 'places'];
+const LIBRARIES: ('places' | 'geometry')[] = ['places', 'geometry'];
 const DEFAULT_CENTER = { lat: 60.1699, lng: 24.9384 }; // Helsinki
 const DEFAULT_ZOOM = 10;
 
-// DrawingManager options
-const DRAWING_MANAGER_OPTIONS = {
-  drawingControl: false,
-  drawingMode: null,
-  rectangleOptions: {
-    fillColor: '#2196F3',
-    fillOpacity: 0.5,
-    strokeWeight: 2,
-    clickable: true,
-    editable: true,
-    zIndex: 1,
-  },
-  circleOptions: {
-    fillColor: '#FF9800',
-    fillOpacity: 0.5,
-    strokeWeight: 2,
-    clickable: true,
-    editable: true,
-    zIndex: 1,
-  },
-  polylineOptions: {
-    strokeColor: '#FF0000',
-    strokeWeight: 2,
-    clickable: true,
-    editable: true,
-    zIndex: 1,
-  },
+// Shape styling options
+const RECTANGLE_OPTIONS = {
+  fillColor: '#2196F3',
+  fillOpacity: 0.5,
+  strokeWeight: 2,
+  strokeColor: '#2196F3',
+  clickable: true,
+  editable: true,
+  zIndex: 1,
+};
+
+const CIRCLE_OPTIONS = {
+  fillColor: '#FF9800',
+  fillOpacity: 0.5,
+  strokeWeight: 2,
+  strokeColor: '#FF9800',
+  clickable: true,
+  editable: true,
+  zIndex: 1,
+};
+
+const POLYLINE_OPTIONS = {
+  strokeColor: '#FF0000',
+  strokeWeight: 2,
+  clickable: true,
+  editable: true,
+  zIndex: 1,
 };
 
 interface MapInnerProps {
@@ -62,6 +60,18 @@ interface Coordinate {
   Radius?: number;
 }
 
+interface CircleCenter {
+  lat: number;
+  lng: number;
+  radius: number;
+}
+
+interface PlaceAutocompleteSelectEvent extends Event {
+  placePrediction: google.maps.places.PlacePrediction;
+}
+
+type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline | google.maps.MVCObject;
+
 const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInstance, setLatitude, setLongitude }) => {
   const {
     path,
@@ -70,64 +80,120 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     flightParams,
     bounds,
     boundsType,
-    selectedShape
+    selectedShape,
+    setBounds,
+    setBoundsType,
+    setShapes,
+    setSelectedShape
   } = useMapContext();
-  const { onDrawingManagerLoad, onDrawingComplete, enableDrawingMode, stopDrawing, parseShapeBounds } = useDrawingManager();
   const { generateWaypointsFromAPI, generateKml } = useWaypointAPI();
   const [startingIndex, setStartingIndex] = useState(1);
-  const [googleLoaded, setGoogleLoaded] = useState(false);
   const [isProbeHeightActive, setIsProbeHeightActive] = useState(false);
   const [activeDrawingMode, setActiveDrawingMode] = useState<string | null>(null);
   const elevatorServiceRef = useRef<google.maps.ElevationService | null>(null);
+  const probeMarkersRef = useRef<google.maps.Marker[]>([]);
+
+  // Drawing state for custom shapes
+  const [drawingPoints, setDrawingPoints] = useState<google.maps.LatLngLiteral[]>([]);
+  const [rectangleStart, setRectangleStart] = useState<google.maps.LatLngLiteral | null>(null);
+  const [circleCenter, setCircleCenter] = useState<google.maps.LatLngLiteral | null>(null);
+
+  // Custom drawing handlers
+  const stopDrawing = useCallback(() => {
+    setActiveDrawingMode(null);
+    setDrawingPoints([]);
+    setRectangleStart(null);
+    setCircleCenter(null);
+  }, []);
 
   const handleDrawRectangle = useCallback(() => {
     console.log('Rectangle drawing started - deactivating probe height');
-    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setIsProbeHeightActive(false);
     setActiveDrawingMode('rectangle');
-    enableDrawingMode('rectangle');
-  }, [enableDrawingMode]);
+    setDrawingPoints([]);
+    setRectangleStart(null);
+  }, []);
 
   const handleDrawCircle = useCallback(() => {
     console.log('Circle drawing started - deactivating probe height');
-    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setIsProbeHeightActive(false);
     setActiveDrawingMode('circle');
-    enableDrawingMode('circle');
-  }, [enableDrawingMode]);
+    setDrawingPoints([]);
+    setCircleCenter(null);
+  }, []);
 
   const handleDrawPolyline = useCallback(() => {
     console.log('Polyline drawing started - deactivating probe height');
-    setIsProbeHeightActive(false); // Deactivate probe height when starting to draw
+    setIsProbeHeightActive(false);
     setActiveDrawingMode('polyline');
-    enableDrawingMode('polyline');
-  }, [enableDrawingMode]);
+    setDrawingPoints([]);
+  }, []);
 
   const handleStopDrawing = useCallback(() => {
-    setActiveDrawingMode(null);
+    // If we're in polyline mode with points, complete the polyline
+    if (activeDrawingMode === 'polyline' && drawingPoints.length >= 2) {
+      console.log('Polyline: Completing with', drawingPoints.length, 'points');
+
+      const pathCoordinates = drawingPoints.map(p => `${p.lat},${p.lng}`).join(';');
+      setBounds(pathCoordinates);
+      setBoundsType('polyline');
+
+      // Create polyline overlay
+      const polyline = new window.google.maps.Polyline({
+        path: drawingPoints,
+        ...POLYLINE_OPTIONS,
+        map: mapInstance
+      });
+
+      setShapes((prev: ShapeType[]) => [...prev, polyline]);
+      setSelectedShape(polyline);
+    }
+
     stopDrawing();
-  }, [stopDrawing]);
+  }, [stopDrawing, activeDrawingMode, drawingPoints, mapInstance, setBounds, setBoundsType, setShapes, setSelectedShape]);
 
   const handleProbeHeight = useCallback(() => {
     const newState = !isProbeHeightActive;
     console.log('Probe Height toggled. New state:', newState);
 
     if (newState) {
-      // When activating probe height, stop any drawing mode first
       console.log('Activating probe height - stopping drawing mode');
       setActiveDrawingMode(null);
       stopDrawing();
     }
 
-    // Set state after stopping drawing to ensure proper order
     setIsProbeHeightActive(newState);
   }, [isProbeHeightActive, stopDrawing]);
 
-  const handleDrawingManagerLoad = (drawingManager: google.maps.drawing.DrawingManager) => {
-    onDrawingManagerLoad(drawingManager);
-  };
+  const handleClearProbeMarkers = useCallback(() => {
+    console.log('Clearing all probe height markers');
+    // Remove all stored markers from map
+    probeMarkersRef.current.forEach((marker) => {
+      marker.setMap(null);
+    });
+    // Clear the array
+    probeMarkersRef.current = [];
+    console.log('Probe height markers cleared');
+  }, []);
 
-  const handleOverlayComplete = (overlay: google.maps.drawing.OverlayCompleteEvent) => {
-    onDrawingComplete(overlay);
-  };
+  // Helper function to parse shape bounds
+  const parseShapeBounds = useCallback((boundsStr: string, type: string) => {
+    if (!boundsStr) return [];
+
+    if (type === 'rectangle' || type === 'polyline') {
+      return boundsStr.split(';').map(coord => {
+        const [lat, lng] = coord.trim().split(',').map(Number);
+        return { Lat: lat, Lng: lng };
+      });
+    } else if (type === 'circle') {
+      const parts = boundsStr.split(';');
+      const [lat, lng] = parts[0].split(',').map(Number);
+      const radiusMatch = parts[1].match(/radius:\s*([\d.]+)/);
+      const radius = radiusMatch ? parseFloat(radiusMatch[1]) : 0;
+      return [{ Lat: lat, Lng: lng, radius, Radius: radius }];
+    }
+    return [];
+  }, []);
 
   const handleGenerateWaypoints = async () => {
     if (!bounds) {
@@ -147,8 +213,9 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         validCoordinates = validateAndCorrectCoordinates(bounds);
       } else if (boundsType === "circle") {
         // For circles, use cached center if available
-        if ((window as any).lastCircleCenter) {
-          const cached = (window as any).lastCircleCenter;
+        const windowWithCircle = window as unknown as Window & { lastCircleCenter: CircleCenter };
+        if (windowWithCircle.lastCircleCenter) {
+          const cached = windowWithCircle.lastCircleCenter;
           validCoordinates = [{
             Lat: cached.lat,
             Lng: cached.lng,
@@ -159,24 +226,30 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
           }];
         } else {
           // Parse from bounds as fallback
-          const circleData = parseShapeBounds(bounds, boundsType);
+          const circleDataArray = parseShapeBounds(bounds, boundsType);
 
-          if (!circleData || !circleData.lat || !circleData.lng) {
+          if (!circleDataArray || circleDataArray.length === 0) {
+            alert('Error: Failed to determine circle center coordinates. Please try drawing the circle again.');
+            return;
+          }
+
+          const circleData = circleDataArray[0];
+          if (!circleData || typeof circleData.Lat !== 'number' || typeof circleData.Lng !== 'number') {
             alert('Error: Failed to determine circle center coordinates. Please try drawing the circle again.');
             return;
           }
 
           validCoordinates = [{
-            Lat: circleData.lat,
-            Lng: circleData.lng,
-            lat: circleData.lat,
-            lng: circleData.lng,
-            radius: circleData.radius,
-            Radius: circleData.radius
+            Lat: circleData.Lat,
+            Lng: circleData.Lng,
+            lat: circleData.Lat,
+            lng: circleData.Lng,
+            radius: ('radius' in circleData) ? circleData.radius : 0,
+            Radius: ('Radius' in circleData) ? circleData.Radius : 0
           }];
         }
       } else {
-        validCoordinates = parseShapeBounds(bounds, boundsType);
+        validCoordinates = parseShapeBounds(bounds, String(boundsType));
       }
 
       if (!validCoordinates || !Array.isArray(validCoordinates) || validCoordinates.length === 0) {
@@ -256,8 +329,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   }, [generateKml, downloadLinkRef]);
 
   useEffect(() => {
-    if (window.google && window.google.maps && window.google.maps.drawing) {
-      setGoogleLoaded(true);
+    if (window.google && window.google.maps) {
       // Initialize Elevation Service
       if (!elevatorServiceRef.current) {
         elevatorServiceRef.current = new window.google.maps.ElevationService();
@@ -268,41 +340,36 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
 
-    console.log('Map clicked. Probe height active:', isProbeHeightActive);
+    const clickPoint = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+    console.log('Map clicked. Probe height active:', isProbeHeightActive, 'Drawing mode:', activeDrawingMode);
 
     // If probe height mode is active, get elevation
     if (isProbeHeightActive && elevatorServiceRef.current) {
       console.log('Probe height mode - fetching elevation');
-      const location = { lat: event.latLng.lat(), lng: event.latLng.lng() };
-
       elevatorServiceRef.current.getElevationForLocations(
-        {
-          locations: [location],
-        },
+        { locations: [clickPoint] },
         (results, status) => {
           if (status === 'OK' && results && results[0]) {
             const elevation = results[0].elevation;
             const elevationMeters = elevation.toFixed(2);
             const elevationFeet = (elevation * 3.28084).toFixed(2);
 
-            // Create info window to display elevation
-            const infoWindow = new window.google.maps.InfoWindow({
-              content: `
-                <div style="padding: 8px;">
-                  <h3 style="margin: 0 0 8px 0; font-weight: bold;">Elevation</h3>
-                  <p style="margin: 0;"><strong>Meters:</strong> ${elevationMeters} m</p>
-                  <p style="margin: 0;"><strong>Feet:</strong> ${elevationFeet} ft</p>
-                  <p style="margin: 4px 0 0 0; font-size: 0.9em; color: #666;">
-                    Lat: ${location.lat.toFixed(6)}, Lng: ${location.lng.toFixed(6)}
-                  </p>
-                </div>
-              `,
-              position: location,
+            // Create a marker with elevation label
+            const marker = new window.google.maps.Marker({
+              position: clickPoint,
+              map: mapInstance,
+              title: `Elevation: ${elevationMeters}m (${elevationFeet}ft)`,
+              label: {
+                text: `${elevationMeters}m`,
+                color: '#000000',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                fontFamily: 'Arial Black, Arial, sans-serif',
+              },
             });
 
-            if (mapInstance) {
-              infoWindow.open(mapInstance);
-            }
+            // Store marker for cleanup
+            probeMarkersRef.current.push(marker);
           } else {
             console.error('Elevation service failed:', status);
             alert('Unable to retrieve elevation data. Status: ' + status);
@@ -312,14 +379,92 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       return;
     }
 
-    // Default behavior: add point to path
+    // Handle custom drawing modes
+    if (activeDrawingMode === 'rectangle') {
+      if (!rectangleStart) {
+        // First click - set start corner
+        console.log('Rectangle: First corner set');
+        setRectangleStart(clickPoint);
+      } else {
+        // Second click - complete rectangle
+        console.log('Rectangle: Second corner set, completing shape');
+        const bounds = new window.google.maps.LatLngBounds(rectangleStart, clickPoint);
+        const ne = bounds.getNorthEast();
+        const sw = bounds.getSouthWest();
+        const nw = new window.google.maps.LatLng(ne.lat(), sw.lng());
+        const se = new window.google.maps.LatLng(sw.lat(), ne.lng());
+
+        const coordinates = `${ne.lat()},${ne.lng()};${se.lat()},${se.lng()};${sw.lat()},${sw.lng()};${nw.lat()},${nw.lng()}`;
+        setBounds(coordinates);
+        setBoundsType('rectangle');
+
+        // Create rectangle overlay
+        const rectangle = new window.google.maps.Rectangle({
+          bounds: bounds,
+          ...RECTANGLE_OPTIONS,
+          map: mapInstance
+        });
+
+        setShapes((prev: ShapeType[]) => [...prev, rectangle]);
+        setSelectedShape(rectangle);
+        setRectangleStart(null);
+        setActiveDrawingMode(null);
+      }
+      return;
+    }
+
+    if (activeDrawingMode === 'circle') {
+      if (!circleCenter) {
+        // First click - set center
+        console.log('Circle: Center set');
+        setCircleCenter(clickPoint);
+      } else {
+        // Second click - complete circle
+        console.log('Circle: Radius set, completing shape');
+        const radius = window.google.maps.geometry.spherical.computeDistanceBetween(
+          new window.google.maps.LatLng(circleCenter.lat, circleCenter.lng),
+          new window.google.maps.LatLng(clickPoint.lat, clickPoint.lng)
+        );
+
+        const coordinates = `${circleCenter.lat},${circleCenter.lng}; radius: ${radius.toFixed(2)}`;
+        setBounds(coordinates);
+        setBoundsType('circle');
+
+        // Cache center for later use
+        const windowWithCircleCenter = window as unknown as Window & { lastCircleCenter: CircleCenter };
+        windowWithCircleCenter.lastCircleCenter = {
+          lat: circleCenter.lat,
+          lng: circleCenter.lng,
+          radius: radius
+        };
+
+        // Create circle overlay
+        const circle = new window.google.maps.Circle({
+          center: circleCenter,
+          radius: radius,
+          ...CIRCLE_OPTIONS,
+          map: mapInstance
+        });
+
+        setShapes((prev: ShapeType[]) => [...prev, circle]);
+        setSelectedShape(circle);
+        setCircleCenter(null);
+        setActiveDrawingMode(null);
+      }
+      return;
+    }
+
+    if (activeDrawingMode === 'polyline') {
+      // Add point to polyline
+      console.log('Polyline: Adding point');
+      setDrawingPoints((prev) => [...prev, clickPoint]);
+      return;
+    }
+
+    // Default behavior: add point to path (for other features)
     console.log('Adding point to path');
-    const newPoint = {
-      lat: event.latLng.lat(),
-      lng: event.latLng.lng(),
-    };
-    setPath((prevPath) => [...prevPath, newPoint]);
-  }, [setPath, isProbeHeightActive, mapInstance]);
+    setPath((prevPath) => [...prevPath, clickPoint]);
+  }, [setPath, isProbeHeightActive, mapInstance, activeDrawingMode, rectangleStart, circleCenter, setBounds, setBoundsType, setShapes, setSelectedShape]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -340,11 +485,8 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       const mapDiv = mapInstance.getDiv();
       if (isProbeHeightActive) {
         console.log('Setting cursor to crosshair for probe height mode');
-        // Use a precise crosshair cursor for elevation probing
-        // Set cursor with !important using style attribute
         mapDiv.style.setProperty('cursor', 'crosshair', 'important');
 
-        // Also set cursor on all child elements to ensure it overrides DrawingManager
         const allElements = mapDiv.querySelectorAll('*');
         allElements.forEach((el: Element) => {
           if (el instanceof HTMLElement) {
@@ -353,7 +495,6 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         });
       } else {
         console.log('Resetting cursor from probe height mode');
-        // Reset cursor
         mapDiv.style.removeProperty('cursor');
 
         const allElements = mapDiv.querySelectorAll('*');
@@ -365,6 +506,23 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       }
     }
   }, [mapInstance, isProbeHeightActive]);
+
+  // Keyboard support for completing polyline
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && activeDrawingMode === 'polyline' && drawingPoints.length >= 2) {
+        console.log('Enter pressed - completing polyline');
+        handleStopDrawing();
+      }
+      if (e.key === 'Escape' && activeDrawingMode) {
+        console.log('Escape pressed - canceling drawing');
+        stopDrawing();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [activeDrawingMode, drawingPoints, handleStopDrawing, stopDrawing]);
 
   // Setup Place Autocomplete Element (modern web component approach)
   useEffect(() => {
@@ -400,10 +558,10 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
             parentElement.replaceChild(autocompleteElement, inputRef.current);
 
             // Update ref to point to new element
-            (inputRef as any).current = autocompleteElement;
+            (inputRef as React.MutableRefObject<HTMLElement>).current = autocompleteElement;
 
             // Handler function for place selection using the NEW gmp-select event
-            const handlePlaceSelect = async (event: any) => {
+            const handlePlaceSelect = async (event: PlaceAutocompleteSelectEvent) => {
               console.log('✅ Place selected event fired!', event);
 
               // New API uses placePrediction instead of place
@@ -478,7 +636,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     initPlaceAutocomplete().catch(error => {
       console.error('❌ PlaceAutocompleteElement failed:', error);
     });
-  }, [mapInstance]);
+  }, [mapInstance, inputRef, setLatitude, setLongitude]);
 
   return (
     <>
@@ -494,12 +652,62 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         />
       )}
 
-      {googleLoaded && window.google && window.google.maps && window.google.maps.drawing && (
-        <DrawingManager
-          onLoad={handleDrawingManagerLoad}
-          onOverlayComplete={handleOverlayComplete}
-          options={DRAWING_MANAGER_OPTIONS}
-        />
+      {/* Render temporary drawing indicators */}
+      {activeDrawingMode === 'rectangle' && rectangleStart && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(33, 150, 243, 0.9)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '4px',
+          pointerEvents: 'none',
+          zIndex: 1000
+        }}>
+          Click to set opposite corner
+        </div>
+      )}
+
+      {activeDrawingMode === 'circle' && circleCenter && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(255, 152, 0, 0.9)',
+          color: 'white',
+          padding: '8px 16px',
+          borderRadius: '4px',
+          pointerEvents: 'none',
+          zIndex: 1000
+        }}>
+          Click to set radius
+        </div>
+      )}
+
+      {activeDrawingMode === 'polyline' && drawingPoints.length > 0 && (
+        <>
+          <Polyline
+            path={drawingPoints}
+            options={{ ...POLYLINE_OPTIONS, strokeOpacity: 0.6 }}
+          />
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(255, 0, 0, 0.9)',
+            color: 'white',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            pointerEvents: 'none',
+            zIndex: 1000
+          }}>
+            Click to add points • Enter to finish • Esc to cancel
+          </div>
+        </>
       )}
 
       <MapToolbar
@@ -511,6 +719,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         onDrawPolyline={handleDrawPolyline}
         onClearShapes={clearAll}
         onProbeHeight={handleProbeHeight}
+        onClearProbeHeight={handleClearProbeMarkers}
         isProbeHeightActive={isProbeHeightActive}
         activeDrawingMode={activeDrawingMode}
         startingIndex={startingIndex}

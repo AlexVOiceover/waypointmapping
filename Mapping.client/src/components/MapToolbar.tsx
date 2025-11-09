@@ -11,6 +11,7 @@ interface MapToolbarProps {
   onDrawPolyline: () => void;
   onClearShapes: () => void;
   onProbeHeight: () => void;
+  onClearProbeHeight: () => void;
   isProbeHeightActive?: boolean;
   activeDrawingMode?: string | null;
   startingIndex?: number;
@@ -28,6 +29,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   onDrawPolyline,
   onClearShapes,
   onProbeHeight,
+  onClearProbeHeight,
   isProbeHeightActive = false,
   activeDrawingMode = null,
   startingIndex = 1
@@ -172,6 +174,16 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
           >
             <Mountain className={`mr-2 h-4 w-4 ${isProbeHeightActive ? 'text-white' : 'text-purple-600'}`} />
             {isProbeHeightActive ? 'Stop Probe Height' : 'Probe Height'}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearProbeHeight}
+            className="w-full justify-start cursor-pointer"
+            title="Clear all elevation probe markers"
+          >
+            <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+            Clear Probe Markers
           </Button>
         </div>}
       </div>

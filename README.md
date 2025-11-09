@@ -1,5 +1,5 @@
 # DroneKartta - Drone Flight Path Planning Application
-You can find demo app https://mappingbackendserver20251030173802-caand5fuhtbpareh.swedencentral-01.azurewebsites.net/
+
 
 DroneKartta is a web-based application for planning and visualizing DJI drone flight paths. It allows users to create waypoints based on different geometric shapes (rectangles, circles, polygons, and polylines) and generate KML files for drone flight missions. Tested with DJI mini 4 pro and AIR 3. Propaply works with other DJI drones, but havent tested with anything else.
 
@@ -148,7 +148,7 @@ The waypoint generation algorithm is optimized for:
 
 2. Start the frontend development server:
    ```
-   cd MappingFrontend.Client
+   cd Mapping.Client
    npm run dev
    ```
 
