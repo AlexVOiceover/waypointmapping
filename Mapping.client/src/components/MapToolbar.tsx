@@ -96,7 +96,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         <div className="bg-blue-50 border-2 border-blue-300 p-4">
           <button
             onClick={() => toggleSection('drawingTools')}
-            className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-blue-600 transition-colors"
+            className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-blue-600 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Pencil className="h-4 w-4 text-blue-600" />
@@ -152,7 +152,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         <div className="bg-green-50 border-2 border-green-300 p-4">
           <button
             onClick={() => toggleSection('actions')}
-            className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-green-600 transition-colors"
+            className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-green-600 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Map className="h-4 w-4 text-green-600" />
@@ -199,7 +199,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         <div className="bg-purple-50 border-2 border-purple-300 p-4">
           <button
             onClick={() => toggleSection('tools')}
-            className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-purple-600 transition-colors"
+            className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-purple-600 transition-colors"
           >
             <div className="flex items-center gap-2">
               <Mountain className="h-4 w-4 text-purple-600" />
