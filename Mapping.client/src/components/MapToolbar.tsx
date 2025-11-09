@@ -93,7 +93,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
       {/* Content Wrapper */}
       <div className="flex-1 overflow-y-auto space-y-4 p-4">
         {/* Drawing Tools Section */}
-        <div className="bg-blue-50 border-2 border-blue-300 p-4">
+        <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-md">
           <button
             onClick={() => toggleSection('drawingTools')}
             className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-blue-600 transition-colors"
@@ -149,7 +149,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         </div>
 
         {/* Actions Section */}
-        <div className="bg-green-50 border-2 border-green-300 p-4">
+        <div className="bg-green-50 border-2 border-green-300 p-4 rounded-md">
           <button
             onClick={() => toggleSection('actions')}
             className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-green-600 transition-colors"
@@ -196,7 +196,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
         </div>
 
         {/* Tools Section */}
-        <div className="bg-purple-50 border-2 border-purple-300 p-4">
+        <div className="bg-purple-50 border-2 border-purple-300 p-4 rounded-md">
           <button
             onClick={() => toggleSection('tools')}
             className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-purple-600 transition-colors"
