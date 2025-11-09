@@ -782,11 +782,11 @@ const MapComponent: React.FC = () => {
   return (
     <MapProvider>
       <div className="flex h-screen relative">
-        {/* Collapsible Side Panel */}
-        {!isPanelCollapsed && (
-          <div className="absolute left-0 top-0 z-40 w-80 bg-white shadow-lg border-r border-gray-300">
+        {/* Collapsible Side Panel - using fixed width or 0 */}
+        <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isPanelCollapsed ? 'w-0' : 'w-80'}`}>
+          <div className="w-80 h-full bg-white shadow-lg border-r border-gray-300 flex flex-col">
             {/* Header with collapse button */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white flex-shrink-0">
               <h2 className="font-semibold text-gray-900">Drone Flight Planner</h2>
               <button
                 onClick={() => setIsPanelCollapsed(true)}
@@ -805,8 +805,8 @@ const MapComponent: React.FC = () => {
               </button>
             </div>
 
-            {/* Content sections */}
-            <div>
+            {/* Content sections - scrollable */}
+            <div className="flex-1 overflow-y-auto">
               {/* Search and Coordinates Section */}
               <div className="bg-cyan-50 border-2 border-cyan-300 p-4">
                 <button
@@ -865,7 +865,7 @@ const MapComponent: React.FC = () => {
               <FlightParametersPanel />
             </div>
           </div>
-        )}
+        </div>
 
         {/* Expand Button - shown when panel is collapsed */}
         {isPanelCollapsed && (
@@ -886,7 +886,7 @@ const MapComponent: React.FC = () => {
           </button>
         )}
 
-        <div className={`transition-all duration-300 ease-in-out ${isPanelCollapsed ? 'w-full' : 'flex-1'}`}>
+        <div className={`transition-all duration-300 ease-in-out flex-1`}>
           <GoogleMap
             mapContainerClassName="w-full h-full"
             center={DEFAULT_CENTER}
