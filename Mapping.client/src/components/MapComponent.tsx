@@ -784,9 +784,9 @@ const MapComponent: React.FC = () => {
       <div className="flex h-screen relative">
         {/* Collapsible Side Panel - using fixed width or 0 */}
         <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isPanelCollapsed ? 'w-0' : 'w-80'}`}>
-          <div className="w-80 h-full bg-white shadow-lg border-r border-gray-300 flex flex-col">
+          <div className="w-80 bg-white shadow-lg border-r border-gray-300 flex flex-col">
             {/* Header with collapse button */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white flex-shrink-0">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
               <h2 className="font-semibold text-gray-900">Drone Flight Planner</h2>
               <button
                 onClick={() => setIsPanelCollapsed(true)}
@@ -805,8 +805,8 @@ const MapComponent: React.FC = () => {
               </button>
             </div>
 
-            {/* Content sections - scrollable */}
-            <div className="flex-1 overflow-y-auto">
+            {/* Content sections */}
+            <div>
               {/* Search and Coordinates Section */}
               <div className="bg-cyan-50 border-2 border-cyan-300 p-4">
                 <button
