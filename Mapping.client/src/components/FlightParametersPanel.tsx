@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select } from '@/components/ui/select';
 import { ACTION_OPTIONS } from '@/lib/constants';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Settings, Camera, Route, Image } from 'lucide-react';
 
 type SetterFunction = (value: number | boolean | string) => void;
 
@@ -88,20 +88,23 @@ const FlightParametersPanel: React.FC = () => {
 
 
   return (
-    <div className="space-y-4 p-4">
+    <div>
       {/* Flight Parameters Section */}
-      <div className="space-y-2">
+      <div className="bg-yellow-50 border-2 border-yellow-300 p-4">
         <button
           onClick={() => toggleSection('flightParams')}
-          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+          className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-yellow-600 transition-colors"
         >
-          <span>Flight Parameters</span>
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-yellow-600" />
+            <span className="text-gray-900">Flight Parameters</span>
+          </div>
           {openSections.flightParams ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
 
-        {openSections.flightParams && <div className="space-y-3 pt-2">
+        {openSections.flightParams && <div className="flex flex-col gap-3 pt-3">
           <div className="space-y-2">
-            <Label htmlFor="altitude" className="text-foreground">
+            <Label htmlFor="altitude" className="text-sm text-foreground">
               Altitude (m)
             </Label>
             <Input
@@ -110,11 +113,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Altitude"
               value={altitude}
               onChange={(e) => onValueChange('altitude', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="speed" className="text-foreground">
+            <Label htmlFor="speed" className="text-sm text-foreground">
               Speed (m/s)
             </Label>
             <Input
@@ -123,11 +127,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Speed"
               value={speed}
               onChange={(e) => onValueChange('speed', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="angle" className="text-foreground">
+            <Label htmlFor="angle" className="text-sm text-foreground">
               Gimbal Angle (°)
             </Label>
             <Input
@@ -136,24 +141,28 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Angle"
               value={angle}
               onChange={(e) => onValueChange('angle', e.target.value)}
+              className="text-sm"
             />
           </div>
         </div>}
       </div>
 
       {/* Camera Settings Section */}
-      <div className="space-y-2">
+      <div className="bg-indigo-50 border-2 border-indigo-300 p-4">
         <button
           onClick={() => toggleSection('cameraSettings')}
-          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+          className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-indigo-600 transition-colors"
         >
-          <span>Camera Settings</span>
+          <div className="flex items-center gap-2">
+            <Camera className="h-4 w-4 text-indigo-600" />
+            <span className="text-gray-900">Camera Settings</span>
+          </div>
           {openSections.cameraSettings ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
 
-        {openSections.cameraSettings && <div className="space-y-3 pt-2">
+        {openSections.cameraSettings && <div className="flex flex-col gap-3 pt-3">
           <div className="space-y-2">
-            <Label htmlFor="focalLength" className="text-foreground">
+            <Label htmlFor="focalLength" className="text-sm text-foreground">
               Focal Length (mm)
             </Label>
             <Input
@@ -162,11 +171,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Focal Length"
               value={focalLength}
               onChange={(e) => onValueChange('focalLength', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sensorWidth" className="text-foreground">
+            <Label htmlFor="sensorWidth" className="text-sm text-foreground">
               Sensor Width (mm)
             </Label>
             <Input
@@ -175,11 +185,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Sensor Width"
               value={sensorWidth}
               onChange={(e) => onValueChange('sensorWidth', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="sensorHeight" className="text-foreground">
+            <Label htmlFor="sensorHeight" className="text-sm text-foreground">
               Sensor Height (mm)
             </Label>
             <Input
@@ -188,55 +199,62 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Sensor Height"
               value={sensorHeight}
               onChange={(e) => onValueChange('sensorHeight', e.target.value)}
+              className="text-sm"
             />
           </div>
         </div>}
       </div>
 
       {/* Path Options Section */}
-      <div className="space-y-2">
+      <div className="bg-orange-50 border-2 border-orange-300 p-4">
         <button
           onClick={() => toggleSection('pathOptions')}
-          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+          className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-orange-600 transition-colors"
         >
-          <span>Path Options</span>
+          <div className="flex items-center gap-2">
+            <Route className="h-4 w-4 text-orange-600" />
+            <span className="text-gray-900">Path Options</span>
+          </div>
           {openSections.pathOptions ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
 
-        {openSections.pathOptions && <div className="space-y-3 pt-2">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="isNorthSouth"
-            checked={isNorthSouth}
-            onCheckedChange={(checked) => onValueChange('isNorthSouth', checked)}
-          />
-          <Label htmlFor="isNorthSouth">North-South Direction</Label>
-        </div>
+        {openSections.pathOptions && <div className="flex flex-col gap-3 pt-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="isNorthSouth"
+              checked={isNorthSouth}
+              onCheckedChange={(checked) => onValueChange('isNorthSouth', checked)}
+            />
+            <Label htmlFor="isNorthSouth" className="text-sm">North-South Direction</Label>
+          </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="useEndpointsOnly"
-            checked={useEndpointsOnly}
-            onCheckedChange={(checked) => onValueChange('useEndpointsOnly', checked)}
-          />
-          <Label htmlFor="useEndpointsOnly">Use Endpoints Only</Label>
-        </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="useEndpointsOnly"
+              checked={useEndpointsOnly}
+              onCheckedChange={(checked) => onValueChange('useEndpointsOnly', checked)}
+            />
+            <Label htmlFor="useEndpointsOnly" className="text-sm">Use Endpoints Only</Label>
+          </div>
         </div>}
       </div>
 
       {/* Photo Settings Section */}
-      <div className="space-y-2">
+      <div className="bg-pink-50 border-2 border-pink-300 p-4">
         <button
           onClick={() => toggleSection('photoSettings')}
-          className="flex items-center justify-between w-full text-lg font-semibold text-foreground border-b border-border pb-2 hover:text-primary transition-colors"
+          className="text-sm font-bold text-gray-900 flex items-center justify-between w-full hover:text-pink-600 transition-colors"
         >
-          <span>Photo Settings</span>
+          <div className="flex items-center gap-2">
+            <Image className="h-4 w-4 text-pink-600" />
+            <span className="text-gray-900">Photo Settings</span>
+          </div>
           {openSections.photoSettings ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
 
-        {openSections.photoSettings && <div className="space-y-3 pt-2">
+        {openSections.photoSettings && <div className="flex flex-col gap-3 pt-3">
           <div className="space-y-2">
-            <Label htmlFor="photoInterval" className="text-foreground">
+            <Label htmlFor="photoInterval" className="text-sm text-foreground">
               Photo Interval (s)
             </Label>
             <Input
@@ -245,11 +263,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Photo Interval"
               value={photoInterval}
               onChange={(e) => onValueChange('photoInterval', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="overlap" className="text-foreground">
+            <Label htmlFor="overlap" className="text-sm text-foreground">
               Overlap (%)
             </Label>
             <Input
@@ -258,11 +277,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Overlap"
               value={overlap}
               onChange={(e) => onValueChange('overlap', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="inDistance" className="text-foreground">
+            <Label htmlFor="inDistance" className="text-sm text-foreground">
               Line Spacing (m)
             </Label>
             <Input
@@ -271,11 +291,12 @@ const FlightParametersPanel: React.FC = () => {
               placeholder="Line Spacing"
               value={inDistance}
               onChange={(e) => onValueChange('inDistance', e.target.value)}
+              className="text-sm"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="allPointsAction" className="text-foreground">
+            <Label htmlFor="allPointsAction" className="text-sm text-foreground">
               Waypoint Action
             </Label>
             <Select

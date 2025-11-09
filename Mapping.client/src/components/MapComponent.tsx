@@ -843,7 +843,9 @@ const MapComponent: React.FC = () => {
             </div>
 
             <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
-            <FlightParametersPanel />
+            <div className="mt-4">
+              <FlightParametersPanel />
+            </div>
           </div>
         </div>
 
