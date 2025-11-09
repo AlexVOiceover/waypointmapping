@@ -781,19 +781,15 @@ const MapComponent: React.FC = () => {
     <MapProvider>
       <div className="flex h-screen relative">
         {/* Collapsible Side Panel */}
-        <div
-          className={`bg-gray-100 overflow-y-auto transition-all duration-300 ease-in-out ${
-            isPanelCollapsed ? 'w-0' : 'w-80'
-          }`}
-          style={{ minWidth: isPanelCollapsed ? '0' : undefined }}
-        >
-          <div className={`p-4 ${isPanelCollapsed ? 'hidden' : 'block'}`}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold">Drone Flight Planner</h2>
+        {!isPanelCollapsed && (
+          <div className="absolute left-0 top-0 z-40 w-80 bg-white shadow-lg border-r border-gray-300">
+            {/* Header with collapse button */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+              <h2 className="font-semibold text-gray-900">Drone Flight Planner</h2>
               <button
                 onClick={() => setIsPanelCollapsed(true)}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
-                title="Collapse panel"
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+                title="Hide panel"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -802,58 +798,71 @@ const MapComponent: React.FC = () => {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
-            <input
-              ref={inputRef}
-              type="text"
-              placeholder="Search for a location"
-              className="w-full p-2 border border-gray-300 rounded mb-4"
-            />
 
-            <div className="mb-4">
-              <div className="text-sm font-semibold text-gray-700 mb-2">Or enter coordinates:</div>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="Latitude"
-                  value={latitude}
-                  onChange={(e) => setLatitude(e.target.value)}
-                  className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
-                />
-                <input
-                  type="number"
-                  step="any"
-                  placeholder="Longitude"
-                  value={longitude}
-                  onChange={(e) => setLongitude(e.target.value)}
-                  className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
-                />
+            {/* Content sections */}
+            <div>
+              {/* Search and Coordinates Section */}
+              <div className="bg-cyan-50 border-2 border-cyan-300 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <h3 className="text-sm font-bold text-gray-900">Location</h3>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    placeholder="Search for a location"
+                    className="w-full p-2 border border-gray-300 rounded text-sm"
+                  />
+                  <div>
+                    <div className="text-xs font-semibold text-gray-700 mb-2">Coordinates:</div>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Latitude"
+                        value={latitude}
+                        onChange={(e) => setLatitude(e.target.value)}
+                        className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+                      />
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="Longitude"
+                        value={longitude}
+                        onChange={(e) => setLongitude(e.target.value)}
+                        className="w-1/2 p-2 border border-gray-300 rounded text-sm min-w-0"
+                      />
+                    </div>
+                    <button
+                      onClick={handleCenterByCoordinates}
+                      disabled={!latitude || !longitude}
+                      className="w-full p-2 bg-cyan-600 text-white rounded hover:bg-cyan-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                    >
+                      Center Map
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={handleCenterByCoordinates}
-                disabled={!latitude || !longitude}
-                className="w-full p-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
-              >
-                Center Map
-              </button>
-            </div>
 
-            <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
-            <div className="mt-4">
+              {/* Flight Parameters Panel */}
+              <a ref={downloadLinkRef} style={{ display: 'none' }}>Download KML</a>
               <FlightParametersPanel />
             </div>
           </div>
-        </div>
+        )}
 
         {/* Expand Button - shown when panel is collapsed */}
         {isPanelCollapsed && (
           <button
             onClick={() => setIsPanelCollapsed(false)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-r-lg shadow-lg transition-colors border border-l-0 border-gray-300"
+            className="absolute left-0 top-0 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-r-lg shadow-lg transition-colors border border-l-0 border-gray-300"
             title="Expand panel"
           >
             <svg
