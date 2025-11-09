@@ -783,8 +783,8 @@ const MapComponent: React.FC = () => {
     <MapProvider>
       <div className="h-screen relative">
         {/* Collapsible Side Panel - using absolute positioning with natural height */}
-        <div className={`absolute left-0 top-0 transition-all duration-300 ease-in-out z-40 overflow-hidden ${isPanelCollapsed ? 'w-0' : 'w-80'}`}>
-          <div className="w-80 bg-white shadow-lg border-r border-gray-300 flex flex-col">
+        <div className={`absolute left-0 top-0 transition-all duration-300 ease-in-out z-40 overflow-hidden ${isPanelCollapsed ? 'w-0' : 'w-60'}`}>
+          <div className="w-60 bg-white shadow-lg border-r border-gray-300 flex flex-col">
             {/* Header with collapse button */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white shrink-0">
               <h2 className="font-semibold text-gray-900">Drone Flight Planner</h2>
@@ -806,7 +806,7 @@ const MapComponent: React.FC = () => {
             </div>
 
             {/* Content sections */}
-            <div>
+            <div className="max-h-[calc(100vh-60px)] overflow-y-auto discreet-scrollbar-left">
               {/* Search and Coordinates Section */}
               <div className="bg-cyan-50 border-2 border-cyan-300 p-4">
                 <button
@@ -896,7 +896,7 @@ const MapComponent: React.FC = () => {
               zoomControl: true,
               mapTypeControl: true,
               mapTypeControlOptions: {
-                position: window.google?.maps?.ControlPosition?.TOP_LEFT || 1,
+                position: window.google?.maps?.ControlPosition?.TOP_CENTER || 2,
                 style: window.google?.maps?.MapTypeControlStyle?.DROPDOWN_MENU || 1,
               },
               scaleControl: true,

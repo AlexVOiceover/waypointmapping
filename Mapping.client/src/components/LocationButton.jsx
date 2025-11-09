@@ -41,13 +41,13 @@ const LocationButton = ({ map, setLatitude, setLongitude }) => {
 
   return (
     <button
-      className="absolute bottom-10 right-10 bg-white rounded-full shadow-md p-2 hover:bg-gray-100 focus:outline-none"
+      className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white rounded-full shadow-md p-2 hover:bg-gray-100 focus:outline-none z-30"
       onClick={handleCenterLocation}
       title="Center on my location"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-6 w-6"
+        className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
