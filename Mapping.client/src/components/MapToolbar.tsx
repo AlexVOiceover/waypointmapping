@@ -52,7 +52,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
     return (
       <button
         onClick={() => setIsCollapsed(false)}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-l-lg shadow-lg transition-colors border border-r-0 border-gray-300"
+        className="absolute right-0 top-0 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-l-lg shadow-lg transition-colors border border-r-0 border-gray-300"
         title="Show toolbar"
       >
         <svg
