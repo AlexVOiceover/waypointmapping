@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, Circle, Pencil, Hand, Map, Download, Trash2, ChevronDown, ChevronRight, Mountain } from 'lucide-react';
+import { Square, Circle, Pencil, Hand, Map, Download, Trash2, ChevronDown, ChevronRight, Mountain, X } from 'lucide-react';
 
 interface MapToolbarProps {
   onStopDrawing: () => void;
@@ -34,6 +34,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   activeDrawingMode = null,
   startingIndex = 1
 }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSections, setOpenSections] = useState({
     drawingTools: true,
     actions: true,
@@ -47,10 +48,41 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
     }));
   };
 
+  if (isCollapsed) {
+    return (
+      <button
+        onClick={() => setIsCollapsed(false)}
+        className="absolute top-5 right-5 z-1000 bg-white rounded-lg shadow-lg border border-gray-300 p-2 hover:bg-gray-50 transition-colors flex items-center justify-center"
+        title="Show toolbar"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l-7 7 7 7M5 5l-7 7 7 7" />
+        </svg>
+      </button>
+    );
+  }
+
   return (
     <div className="absolute top-5 right-5 z-1000 w-60 bg-white rounded-xl shadow-xl border border-gray-300">
+      {/* Collapse Button */}
+      <div className="flex justify-end p-2 border-b border-gray-200">
+        <button
+          onClick={() => setIsCollapsed(true)}
+          className="p-1 hover:bg-gray-100 rounded transition-colors"
+          title="Hide toolbar"
+        >
+          <X className="h-4 w-4 text-gray-600" />
+        </button>
+      </div>
+
       {/* Drawing Tools Section */}
-      <div className="p-4 bg-blue-50 border-b border-gray-200">
+      <div className="p-4 bg-blue-50 border-2 border-blue-300">
         <button
           onClick={() => toggleSection('drawingTools')}
           className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-blue-600 transition-colors"
@@ -106,7 +138,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
       </div>
 
       {/* Actions Section */}
-      <div className="p-4 bg-green-50">
+      <div className="p-4 bg-green-50 border-2 border-green-300">
         <button
           onClick={() => toggleSection('actions')}
           className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-green-600 transition-colors"
@@ -153,7 +185,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
       </div>
 
       {/* Tools Section */}
-      <div className="p-4 bg-purple-50">
+      <div className="p-4 bg-purple-50 border-2 border-purple-300">
         <button
           onClick={() => toggleSection('tools')}
           className="text-sm font-bold text-gray-900 mb-3 flex items-center justify-between w-full hover:text-purple-600 transition-colors"
