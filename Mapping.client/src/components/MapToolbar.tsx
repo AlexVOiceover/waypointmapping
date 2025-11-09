@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, Circle, Pencil, Hand, Map, Download, Trash2, ChevronDown, ChevronRight, Mountain, X } from 'lucide-react';
+import { Square, Circle, Pencil, Hand, Map, Download, Trash2, ChevronDown, ChevronRight, Mountain } from 'lucide-react';
 
 interface MapToolbarProps {
   onStopDrawing: () => void;
@@ -52,32 +52,41 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
     return (
       <button
         onClick={() => setIsCollapsed(false)}
-        className="absolute top-5 right-5 z-1000 bg-white rounded-lg shadow-lg border border-gray-300 p-2 hover:bg-gray-50 transition-colors flex items-center justify-center"
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-50 bg-gray-100 hover:bg-gray-200 p-3 rounded-l-lg shadow-lg transition-colors border border-r-0 border-gray-300"
         title="Show toolbar"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
+          className="h-6 w-6"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l-7 7 7 7M5 5l-7 7 7 7" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
         </svg>
       </button>
     );
   }
 
   return (
-    <div className="absolute top-5 right-5 z-1000 w-60 bg-white rounded-xl shadow-xl border border-gray-300">
+    <div className="absolute top-0 right-0 z-1000 h-screen w-60 bg-white rounded-none shadow-lg border-l border-gray-300 overflow-y-auto">
       {/* Collapse Button */}
-      <div className="flex justify-end p-2 border-b border-gray-200">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white">
+        <h3 className="font-semibold text-gray-900">Tools</h3>
         <button
           onClick={() => setIsCollapsed(true)}
           className="p-1 hover:bg-gray-100 rounded transition-colors"
           title="Hide toolbar"
         >
-          <X className="h-4 w-4 text-gray-600" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
