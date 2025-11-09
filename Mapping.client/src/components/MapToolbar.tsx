@@ -69,7 +69,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   }
 
   return (
-    <div className="absolute top-0 right-0 z-1000 h-screen w-60 bg-white rounded-none shadow-lg border-l border-gray-300 overflow-y-auto flex flex-col">
+    <div className="fixed top-0 right-0 z-1000 h-screen w-60 bg-white rounded-none shadow-lg border-l border-gray-300 flex flex-col">
       {/* Collapse Button */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white flex-shrink-0">
         <h3 className="font-semibold text-gray-900">Tools</h3>
@@ -91,7 +91,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
       </div>
 
       {/* Content Wrapper */}
-      <div className="flex-1 overflow-y-auto space-y-4 p-4">
+      <div className="flex-1 overflow-y-auto space-y-4 p-4 min-h-0">
         {/* Drawing Tools Section */}
         <div className="bg-blue-50 border-2 border-blue-300 p-4 rounded-md">
           <button
