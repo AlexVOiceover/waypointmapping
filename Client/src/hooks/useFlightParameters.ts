@@ -18,6 +18,7 @@ interface FlightParametersInitialState {
   flipPath?: boolean;
   unitType?: string;
   manualSpeedSet?: boolean;
+  accountForTerrain?: boolean;
 }
 
 interface FlightParameters {
@@ -33,6 +34,7 @@ interface FlightParameters {
   finalAction: string;
   flipPath: boolean;
   unitType: string;
+  accountForTerrain: boolean;
 }
 
 interface UseFlightParametersReturn {
@@ -52,6 +54,7 @@ interface UseFlightParametersReturn {
   finalAction: string;
   flipPath: boolean;
   unitType: string;
+  accountForTerrain: boolean;
 
   // Setters
   setAltitude: (value: number) => void;
@@ -68,6 +71,7 @@ interface UseFlightParametersReturn {
   setAllPointsAction: (value: string) => void;
   setFinalAction: (value: string) => void;
   setUnitType: (value: string) => void;
+  setAccountForTerrain: (value: boolean) => void;
 
   // Toggle functions
   toggleUseEndpointsOnly: () => void;
@@ -104,6 +108,7 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
   const [finalAction, setFinalAction] = useState<string>(initialState.finalAction || '0');
   const [flipPath, setFlipPath] = useState<boolean>(initialState.flipPath || false);
   const [unitType, setUnitType] = useState<string>(initialState.unitType || '0');
+  const [accountForTerrain, setAccountForTerrain] = useState<boolean>(initialState.accountForTerrain || false);
 
   // Calculate flight parameters whenever relevant state changes
   useEffect(() => {
@@ -173,6 +178,7 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
     finalAction,
     flipPath,
     unitType,
+    accountForTerrain,
 
     // Setters
     setAltitude,
@@ -189,6 +195,7 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
     setAllPointsAction,
     setFinalAction,
     setUnitType,
+    setAccountForTerrain,
 
     // Toggle functions
     toggleUseEndpointsOnly,
@@ -210,7 +217,8 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
         allPointsAction,
         finalAction,
         flipPath: flipPath === true,
-        unitType
+        unitType,
+        accountForTerrain: accountForTerrain === true
       };
 
       return params;

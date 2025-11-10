@@ -268,6 +268,66 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       console.log('mapRef.current exists:', !!mapRef.current);
       console.log('Processing', generatedPoints.length, 'waypoints');
 
+      // Adjust altitudes for terrain if enabled
+      if (flightParams.accountForTerrain && mapRef.current) {
+        try {
+          const elevationService = new google.maps.ElevationService();
+          const locations = generatedPoints.map((point: any) => {
+            const latitude = point.Lat !== undefined ? point.Lat :
+                            (point.lat !== undefined ? point.lat :
+                            (point.Latitude !== undefined ? point.Latitude :
+                            (point.latitude !== undefined ? point.latitude : 0)));
+            const longitude = point.Lng !== undefined ? point.Lng :
+                             (point.lng !== undefined ? point.lng :
+                             (point.Longitude !== undefined ? point.Longitude :
+                             (point.longitude !== undefined ? point.longitude : 0)));
+            return { lat: latitude, lng: longitude };
+          });
+
+          // Get elevations for all waypoints
+          const elevationResults = await new Promise<any[]>((resolve, reject) => {
+            elevationService.getElevationForLocations(
+              { locations },
+              (results, status) => {
+                if (status === 'OK' && results) {
+                  resolve(results);
+                } else {
+                  console.warn('Elevation service failed:', status);
+                  reject(new Error(`Elevation service failed: ${status}`));
+                }
+              }
+            );
+          }).catch(() => {
+            // If elevation fails, just continue without terrain adjustment
+            console.warn('Terrain adjustment disabled due to elevation service error');
+            return null;
+          });
+
+          if (elevationResults && elevationResults.length > 0) {
+            const baseElevation = elevationResults[0].elevation;
+            console.log('Base elevation (first waypoint):', baseElevation);
+
+            // Adjust altitudes based on terrain elevation differences
+            for (let i = 0; i < generatedPoints.length && i < elevationResults.length; i++) {
+              const terrainElevation = elevationResults[i].elevation;
+              const elevationDifference = terrainElevation - baseElevation;
+
+              // Get current altitude
+              const currentAltitude = generatedPoints[i].Alt !== undefined ? generatedPoints[i].Alt :
+                                     (generatedPoints[i].alt !== undefined ? generatedPoints[i].alt :
+                                     (generatedPoints[i].Altitude !== undefined ? generatedPoints[i].Altitude :
+                                     (generatedPoints[i].altitude !== undefined ? generatedPoints[i].altitude : 60)));
+
+              // Adjust altitude by the elevation difference
+              generatedPoints[i].altitude = currentAltitude + elevationDifference;
+              console.log(`Waypoint ${i}: base=${currentAltitude}m, terrain_diff=${elevationDifference.toFixed(2)}m, adjusted=${generatedPoints[i].altitude.toFixed(2)}m`);
+            }
+          }
+        } catch (error) {
+          console.error('Error adjusting altitudes for terrain:', error);
+        }
+      }
+
       // Process each waypoint returned from the API
       for (let i = 0; i < generatedPoints.length; i++) {
         const point = generatedPoints[i];

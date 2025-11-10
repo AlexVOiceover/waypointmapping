@@ -38,6 +38,7 @@ const FlightParametersPanel: React.FC = () => {
     isNorthSouth,
     useEndpointsOnly,
     allPointsAction,
+    accountForTerrain,
     setAltitude,
     setSpeed,
     setAngle,
@@ -49,7 +50,8 @@ const FlightParametersPanel: React.FC = () => {
     setInDistance,
     setIsNorthSouth,
     setUseEndpointsOnly,
-    setAllPointsAction
+    setAllPointsAction,
+    setAccountForTerrain
   } = flightParams;
 
   // Map field names to their setter functions and types
@@ -66,6 +68,7 @@ const FlightParametersPanel: React.FC = () => {
     isNorthSouth: { setter: setIsNorthSouth as (value: unknown) => void, type: 'boolean' },
     useEndpointsOnly: { setter: setUseEndpointsOnly as (value: unknown) => void, type: 'boolean' },
     allPointsAction: { setter: setAllPointsAction as (value: unknown) => void, type: 'string' },
+    accountForTerrain: { setter: setAccountForTerrain as (value: unknown) => void, type: 'boolean' },
   };
 
   const onValueChange = (field: string, value: string | boolean) => {
@@ -307,6 +310,15 @@ const FlightParametersPanel: React.FC = () => {
                 </option>
               ))}
             </Select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="accountForTerrain"
+              checked={accountForTerrain}
+              onCheckedChange={(checked) => onValueChange('accountForTerrain', checked)}
+            />
+            <Label htmlFor="accountForTerrain" className="text-sm">Account for Terrain</Label>
           </div>
         </div>}
       </div>
