@@ -118,6 +118,15 @@ const FlightParametersPanel: React.FC = () => {
             />
           </div>
 
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="accountForTerrain"
+              checked={accountForTerrain}
+              onCheckedChange={(checked) => onValueChange('accountForTerrain', checked)}
+            />
+            <Label htmlFor="accountForTerrain" className="text-sm">Account for Terrain</Label>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="speed" className="text-sm text-foreground">
               Speed (m/s)
@@ -310,15 +319,6 @@ const FlightParametersPanel: React.FC = () => {
                 </option>
               ))}
             </Select>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="accountForTerrain"
-              checked={accountForTerrain}
-              onCheckedChange={(checked) => onValueChange('accountForTerrain', checked)}
-            />
-            <Label htmlFor="accountForTerrain" className="text-sm">Account for Terrain</Label>
           </div>
         </div>}
       </div>
