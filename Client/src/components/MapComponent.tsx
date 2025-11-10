@@ -45,7 +45,7 @@ const POLYLINE_OPTIONS = {
 };
 
 interface MapInnerProps {
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | HTMLElement>;
   downloadLinkRef: React.RefObject<HTMLAnchorElement>;
   mapInstance: google.maps.Map | null;
   setLatitude: (lat: string) => void;
@@ -71,12 +71,11 @@ interface PlaceAutocompleteSelectEvent extends Event {
   placePrediction: google.maps.places.PlacePrediction;
 }
 
-type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline | google.maps.MVCObject;
+type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline;
 
 const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInstance, setLatitude, setLongitude }) => {
   const {
     path,
-    setPath,
     clearAll,
     clearWaypoints,
     flightParams,
@@ -294,7 +293,8 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
 
     } catch (error) {
       console.error('Error parsing coordinates:', error);
-      alert(`Error parsing coordinates: ${(error as Error).message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Error parsing coordinates: ${errorMessage}`);
       return;
     }
 
@@ -341,7 +341,8 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       }
     } catch (error) {
       console.error('Generate waypoints error:', error);
-      alert('Error generating waypoints: ' + ((error as Error).message || error));
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert('Error generating waypoints: ' + errorMessage);
     }
   };
 
@@ -500,7 +501,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     }
 
     // Don't add points to path by default - only through explicit drawing tools
-  }, [setPath, isProbeHeightActive, mapInstance, activeDrawingMode, rectangleStart, circleCenter, setBounds, setBoundsType, setShapes, setSelectedShape]);
+  }, [isProbeHeightActive, mapInstance, activeDrawingMode, rectangleStart, circleCenter, setBounds, setBoundsType, setShapes, setSelectedShape]);
 
   useEffect(() => {
     if (!mapInstance) return;
@@ -638,7 +639,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
             parentElement.replaceChild(autocompleteElement, inputRef.current);
 
             // Update ref to point to new element
-            (inputRef as React.MutableRefObject<HTMLElement>).current = autocompleteElement;
+            (inputRef as React.MutableRefObject<HTMLElement | HTMLInputElement>).current = autocompleteElement;
 
             // Handler function for place selection using the NEW gmp-select event
             const handlePlaceSelect = async (event: PlaceAutocompleteSelectEvent) => {

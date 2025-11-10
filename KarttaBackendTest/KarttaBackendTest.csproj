@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MappingBackend.Server\MappingBackend.Server.csproj" />
+    <ProjectReference Include="..\Server\MappingBackend.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,9 @@
 import { createContext, useContext, useState, useRef, ReactNode } from 'react';
 import { useFlightParameters } from '../hooks/useFlightParameters';
 
+// Shape type definition
+type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline;
+
 // TypeScript interfaces
 interface Waypoint {
   id: string | number;
@@ -17,12 +20,12 @@ interface Waypoint {
 
 interface MapContextValue {
   // State
-  shapes: google.maps.MVCObject[];
-  setShapes: React.Dispatch<React.SetStateAction<google.maps.MVCObject[]>>;
+  shapes: ShapeType[];
+  setShapes: React.Dispatch<React.SetStateAction<ShapeType[]>>;
   waypoints: Waypoint[];
   setWaypoints: React.Dispatch<React.SetStateAction<Waypoint[]>>;
-  selectedShape: google.maps.MVCObject | null;
-  setSelectedShape: React.Dispatch<React.SetStateAction<google.maps.MVCObject | null>>;
+  selectedShape: ShapeType | null;
+  setSelectedShape: React.Dispatch<React.SetStateAction<ShapeType | null>>;
   selectedMarker: Waypoint | null;
   setSelectedMarker: React.Dispatch<React.SetStateAction<Waypoint | null>>;
   path: google.maps.LatLngLiteral[];
@@ -58,9 +61,9 @@ const MapContext = createContext<MapContextValue | undefined>(undefined);
 // Context provider component
 export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   // Map state
-  const [shapes, setShapes] = useState<google.maps.MVCObject[]>([]);
+  const [shapes, setShapes] = useState<ShapeType[]>([]);
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [selectedShape, setSelectedShape] = useState<google.maps.MVCObject | null>(null);
+  const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
   const [selectedMarker, setSelectedMarker] = useState<Waypoint | null>(null);
   const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]);
   const [bounds, setBounds] = useState<string>('');
