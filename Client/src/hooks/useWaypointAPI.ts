@@ -430,6 +430,84 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
                   }
                 };
               }
+
+              // Attach Save button handler
+              const saveBtn = document.getElementById("editWaypointSave") as HTMLButtonElement;
+              if (saveBtn) {
+                saveBtn.onclick = (e: MouseEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Save clicked for waypoint:', currentWaypointId);
+
+                  // Get the updated values from the form inputs
+                  const altInput = document.getElementById("editWaypointAltitude") as HTMLInputElement;
+                  const speedInput = document.getElementById("editWaypointSpeed") as HTMLInputElement;
+                  const angleInput = document.getElementById("editWaypointAngle") as HTMLInputElement;
+                  const actionInput = document.getElementById("editWaypointAction") as HTMLSelectElement;
+
+                  if (altInput && speedInput && angleInput && actionInput) {
+                    // Update the marker's properties
+                    const currentMarker = allMarkers.find((m: any) => m.id === currentWaypointId);
+                    if (currentMarker) {
+                      currentMarker.altitude = parseFloat(altInput.value) || currentMarker.altitude;
+                      currentMarker.speed = parseFloat(speedInput.value) || currentMarker.speed;
+                      currentMarker.angle = parseFloat(angleInput.value) || currentMarker.angle;
+                      currentMarker.action = actionInput.value || currentMarker.action;
+
+                      console.log('Waypoint updated:', {
+                        id: currentWaypointId,
+                        altitude: currentMarker.altitude,
+                        speed: currentMarker.speed,
+                        angle: currentMarker.angle,
+                        action: currentMarker.action
+                      });
+
+                      // Add visual feedback - flash the button
+                      const originalBg = saveBtn.style.backgroundColor;
+                      const originalText = saveBtn.textContent;
+
+                      saveBtn.style.backgroundColor = '#15803d';
+                      saveBtn.textContent = 'Saved!';
+                      saveBtn.style.pointerEvents = 'none';
+
+                      setTimeout(() => {
+                        saveBtn.style.backgroundColor = originalBg;
+                        saveBtn.textContent = originalText;
+                        saveBtn.style.pointerEvents = 'auto';
+                      }, 1500);
+
+                      // Modal stays open for further editing or navigation
+                    }
+                  }
+                };
+              }
+
+              // Attach Delete button handler
+              const deleteBtn = document.getElementById("editWaypointRemovee") as HTMLButtonElement;
+              if (deleteBtn) {
+                deleteBtn.onclick = (e: MouseEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Delete clicked for waypoint:', currentWaypointId);
+
+                  // Find and remove the marker
+                  const markerIndex = allMarkers.findIndex((m: any) => m.id === currentWaypointId);
+                  if (markerIndex > -1) {
+                    const markerToRemove = allMarkers[markerIndex];
+                    markerToRemove.setMap(null);
+                    allMarkers.splice(markerIndex, 1);
+
+                    // Close the info window
+                    if (genInfoWindowRef.current) {
+                      genInfoWindowRef.current.close();
+                    }
+
+                    // Redraw the flight paths
+                    redrawFlightPaths();
+                    console.log('Waypoint deleted, remaining waypoints:', allMarkers.length);
+                  }
+                };
+              }
             });
           }
 
