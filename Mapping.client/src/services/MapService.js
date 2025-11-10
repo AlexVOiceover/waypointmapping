@@ -17,13 +17,14 @@ export const calculateDistance = (lat1, lng1, lat2, lng2) => {
 };
 
 // Create a polyline on the map
-export const createPolyline = (map, path, color = "#FF0000", weight = 2) => {
+export const createPolyline = (map, path, color = "#FF0000", weight = 2, zIndex = 100) => {
   const polyline = new google.maps.Polyline({
     path,
     geodesic: true,
     strokeColor: color,
     strokeOpacity: 1.0,
     strokeWeight: weight,
+    zIndex,
   });
   polyline.setMap(map);
   return polyline;

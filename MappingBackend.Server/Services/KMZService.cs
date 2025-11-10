@@ -152,6 +152,10 @@ namespace KarttaBackEnd2.Server.Services
                 var dampingDist = waypoint.WaypointTurnDampingDist.ToString(CultureInfo.InvariantCulture) ?? "0";
                 var useStraightLine = waypoint.UseStraightLine ?? "0";
 
+                // Determine the action to use based on waypoint.Action property
+                string actionActuatorFunc = GetActionActuatorFunc(waypoint.Action);
+                string actionXml = GetActionXml(actionActuatorFunc);
+
                 // Lisää Placemark osio WPML sisällössä
                 wpmlContent.AppendLine($@"
                        <Placemark>
@@ -181,16 +185,7 @@ namespace KarttaBackEnd2.Server.Services
                   <wpml:actionTrigger>
                       <wpml:actionTriggerType>reachPoint</wpml:actionTriggerType>
                   </wpml:actionTrigger>
-                  <wpml:action>
-                      <wpml:actionId>1</wpml:actionId>
-                      <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
-                           <wpml:action>
-                    <wpml:actionId>6</wpml:actionId>
-                    <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
-                    <wpml:actionActuatorFuncParam>
-                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-                    </wpml:actionActuatorFuncParam>
-                  </wpml:action>
+                  {actionXml}
               </wpml:actionGroup>
          <wpml:actionGroup>
           <wpml:actionGroupId>2</wpml:actionGroupId>
@@ -246,6 +241,63 @@ namespace KarttaBackEnd2.Server.Services
             }
         }
 
-     
+        /// <summary>
+        /// Convert the action string from the waypoint to the DJI WPML actionActuatorFunc
+        /// </summary>
+        private string GetActionActuatorFunc(string action)
+        {
+            return action?.ToLower() switch
+            {
+                "takephoto" => "takePhoto",
+                "startrecord" => "startRecord",
+                "stoprecord" => "stopRecord",
+                "noaction" => "none",
+                _ => "none"  // Default to no action if not recognized
+            };
+        }
+
+        /// <summary>
+        /// Generate the XML action block for the waypoint action
+        /// </summary>
+        private string GetActionXml(string actionActuatorFunc)
+        {
+            return actionActuatorFunc switch
+            {
+                "takePhoto" => @"
+                  <wpml:action>
+                      <wpml:actionId>1</wpml:actionId>
+                      <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
+                  </wpml:action>
+                  <wpml:action>
+                    <wpml:actionId>6</wpml:actionId>
+                    <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
+                    <wpml:actionActuatorFuncParam>
+                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+                    </wpml:actionActuatorFuncParam>
+                  </wpml:action>",
+                "startRecord" => @"
+                  <wpml:action>
+                      <wpml:actionId>1</wpml:actionId>
+                      <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
+                  </wpml:action>
+                  <wpml:action>
+                    <wpml:actionId>6</wpml:actionId>
+                    <wpml:actionActuatorFunc>startRecord</wpml:actionActuatorFunc>
+                    <wpml:actionActuatorFuncParam>
+                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+                    </wpml:actionActuatorFuncParam>
+                  </wpml:action>",
+                "stopRecord" => @"
+                  <wpml:action>
+                    <wpml:actionId>6</wpml:actionId>
+                    <wpml:actionActuatorFunc>stopRecord</wpml:actionActuatorFunc>
+                    <wpml:actionActuatorFuncParam>
+                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
+                    </wpml:actionActuatorFuncParam>
+                  </wpml:action>",
+                _ => ""  // No action - empty action group
+            };
+        }
+
     }
 }

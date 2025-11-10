@@ -15,8 +15,8 @@ export type WaypointAction = typeof WaypointActions[keyof typeof WaypointActions
  * Action options mapping for dropdowns
  */
 export const ACTION_OPTIONS = [
-  { value: WaypointActions.NO_ACTION, label: 'No Action' },
   { value: WaypointActions.TAKE_PHOTO, label: 'Take Picture' },
+  { value: WaypointActions.NO_ACTION, label: 'No Action' },
   { value: WaypointActions.START_RECORD, label: 'Start Recording' },
   { value: WaypointActions.STOP_RECORD, label: 'Stop Recording' },
 ] as const;

@@ -7,8 +7,6 @@ import { Select } from '@/components/ui/select';
 import { ACTION_OPTIONS } from '@/lib/constants';
 import { ChevronDown, ChevronRight, Settings, Camera, Route, Image } from 'lucide-react';
 
-type SetterFunction = (value: number | boolean | string) => void;
-
 /**
  * Component for displaying and editing flight parameters
  */
@@ -55,19 +53,19 @@ const FlightParametersPanel: React.FC = () => {
   } = flightParams;
 
   // Map field names to their setter functions and types
-  const fieldSetters: Record<string, { setter: SetterFunction; type: 'number' | 'boolean' | 'string' }> = {
-    altitude: { setter: setAltitude, type: 'number' },
-    speed: { setter: setSpeed, type: 'number' },
-    angle: { setter: setAngle, type: 'number' },
-    focalLength: { setter: setFocalLength, type: 'number' },
-    sensorWidth: { setter: setSensorWidth, type: 'number' },
-    sensorHeight: { setter: setSensorHeight, type: 'number' },
-    photoInterval: { setter: setPhotoInterval, type: 'number' },
-    overlap: { setter: setOverlap, type: 'number' },
-    inDistance: { setter: setInDistance, type: 'number' },
-    isNorthSouth: { setter: setIsNorthSouth, type: 'boolean' },
-    useEndpointsOnly: { setter: setUseEndpointsOnly, type: 'boolean' },
-    allPointsAction: { setter: setAllPointsAction, type: 'string' },
+  const fieldSetters: Record<string, { setter: (value: unknown) => void; type: 'number' | 'boolean' | 'string' }> = {
+    altitude: { setter: setAltitude as (value: unknown) => void, type: 'number' },
+    speed: { setter: setSpeed as (value: unknown) => void, type: 'number' },
+    angle: { setter: setAngle as (value: unknown) => void, type: 'number' },
+    focalLength: { setter: setFocalLength as (value: unknown) => void, type: 'number' },
+    sensorWidth: { setter: setSensorWidth as (value: unknown) => void, type: 'number' },
+    sensorHeight: { setter: setSensorHeight as (value: unknown) => void, type: 'number' },
+    photoInterval: { setter: setPhotoInterval as (value: unknown) => void, type: 'number' },
+    overlap: { setter: setOverlap as (value: unknown) => void, type: 'number' },
+    inDistance: { setter: setInDistance as (value: unknown) => void, type: 'number' },
+    isNorthSouth: { setter: setIsNorthSouth as (value: unknown) => void, type: 'boolean' },
+    useEndpointsOnly: { setter: setUseEndpointsOnly as (value: unknown) => void, type: 'boolean' },
+    allPointsAction: { setter: setAllPointsAction as (value: unknown) => void, type: 'string' },
   };
 
   const onValueChange = (field: string, value: string | boolean) => {

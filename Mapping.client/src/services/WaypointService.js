@@ -40,8 +40,8 @@ export const generateWaypoints = async (request) => {
       IsNorthSouth: request.IsNorthSouth === true || request.isNorthSouth === true,
       // Check both PascalCase and camelCase property names to avoid case sensitivity issues
       UseEndpointsOnly: request.UseEndpointsOnly === true || request.useEndpointsOnly === true,
-      AllPointsAction: String(request.allPointsAction || 'noAction'),
-      Action: String(request.allPointsAction || 'noAction'),
+      AllPointsAction: String(request.AllPointsAction || request.allPointsAction || 'takePhoto'),
+      Action: String(request.AllPointsAction || request.allPointsAction || 'takePhoto'),
       FinalAction: String(request.finalAction || '0'),
       FlipPath: Boolean(request.flipPath),
       UnitType: Number(request.unitType || 0),

@@ -39,6 +39,7 @@ interface MapContextValue {
 
   // Functions
   clearAll: () => void;
+  clearWaypoints: () => void;
   redrawFlightPaths: () => void;
   updateMarkerIcon: (waypoint: Waypoint) => void;
   redrawMarkers: () => void;
@@ -102,6 +103,28 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     setWaypoints([]);
   };
 
+  // Clear only waypoints (not shapes/drawings)
+  const clearWaypoints = () => {
+    // Remove all markers from the map
+    if (mapRef.current && (mapRef.current as any).flags) {
+      (mapRef.current as any).flags.forEach((marker: google.maps.Marker) => {
+        marker.setMap(null);
+      });
+      (mapRef.current as any).flags = [];
+    }
+
+    // Remove all routes (polylines) from the map
+    if (mapRef.current && (mapRef.current as any).lines) {
+      (mapRef.current as any).lines.forEach((line: google.maps.Polyline) => {
+        line.setMap(null);
+      });
+      (mapRef.current as any).lines = [];
+    }
+
+    // Clear waypoints state
+    setWaypoints([]);
+  };
+
   // Redraw flight paths
   const redrawFlightPaths = () => {
     if (!mapRef.current) return;
@@ -127,6 +150,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
       strokeColor: "#FF0000",
       strokeOpacity: 1.0,
       strokeWeight: 2,
+      zIndex: 100,
     });
 
     flightPath.setMap(mapRef.current);
@@ -211,6 +235,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
 
     // Functions
     clearAll,
+    clearWaypoints,
     redrawFlightPaths,
     updateMarkerIcon,
     redrawMarkers,

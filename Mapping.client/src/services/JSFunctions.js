@@ -83,26 +83,169 @@ export const measure = (lat1, lon1, lat2, lon2) => {
 export const GenerateWaypointInfoboxText = (waypointMarker) => {
     let select = '';
     if (waypointMarker.action == "noAction") {
-        select = '<option selected value="noAction">No Action</option><option value="takePhoto">Take Picture</option><option value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
+        select = '<option value="takePhoto">Take Picture</option><option selected value="noAction">No Action</option><option value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
     } else if (waypointMarker.action == "takePhoto") {
-        select = '<option value="noAction">No Action</option><option selected value="takePhoto">Take Picture</option><option value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
+        select = '<option selected value="takePhoto">Take Picture</option><option value="noAction">No Action</option><option value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
     } else if (waypointMarker.action == "startRecord") {
-        select = '<option value="noAction">No Action</option><option value="takePhoto">Take Picture</option><option selected value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
+        select = '<option value="takePhoto">Take Picture</option><option value="noAction">No Action</option><option selected value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
     } else if (waypointMarker.action == "stopRecord") {
-        select = '<option value="noAction">No Action</option><option value="takePhoto">Take Picture</option><option value="startRecord">Start Recording</option><option selected value="stopRecord">Stop Recording</option>';
+        select = '<option value="takePhoto">Take Picture</option><option value="noAction">No Action</option><option value="startRecord">Start Recording</option><option selected value="stopRecord">Stop Recording</option>';
     }
-    return `<div style="color: black;"><h2 class="text-center" id="selectedWaypointId" style="color: black;">
-    ${waypointMarker.id}</h2><div class="text-center" style="color: black;">
-    ${waypointMarker.lat}, ${waypointMarker.lng}</div><br/>
-    Altitude:<br/><input type="text" id="editWaypointAltitude" value="${waypointMarker.altitude}" /><span class="unitsLabel">Meters</span><br/>
-    Speed:<br/><input type="text" id="editWaypointSpeed" value="${waypointMarker.speed}" /><span class="unitsLabel">Meters</span>/s<br/>
-    Gimbal Angle:<br/><input type="text" id="editWaypointAngle" value="${waypointMarker.angle}" />Degrees<br/>
-    Heading:<br/><input type="text" id="editWaypointHeading" value="${waypointMarker.heading}" />Degrees North<br/>
-    Action:<br/><select id="editWaypointAction">${select}</select><br />
-    Waypoint Number:<br/><input type="text" id="editWaypointID" value="${waypointMarker.id}" /><br/><br/>
-    <div class="text-center" style="color: black;">
-    <button class="btn btn-success" id="editWaypointSave"">Save</button><span> </span>
-    <button class="btn btn-danger" id="editWaypointRemovee">Remove</button></div></div>`;
+
+    return `<div style="
+        font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+        background: white;
+        padding: 14px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        max-width: 240px;
+        color: #1a1a1a;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 8px;
+        ">
+            <button id="waypointPrevBtn" style="
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                padding: 4px 8px;
+                cursor: pointer;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                transition: all 0.2s;
+                color: #666;
+            " title="Previous waypoint" onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='#d1d5db';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e0e0e0';">
+                ←
+            </button>
+            <div style="
+                font-size: 18px;
+                font-weight: 600;
+                color: #1a1a1a;
+            " id="selectedWaypointId">
+                Waypoint ${waypointMarker.id}
+            </div>
+            <button id="waypointNextBtn" style="
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 4px;
+                padding: 4px 8px;
+                cursor: pointer;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                transition: all 0.2s;
+                color: #666;
+            " title="Next waypoint" onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderColor='#d1d5db';" onmouseout="this.style.backgroundColor='white'; this.style.borderColor='#e0e0e0';">
+                →
+            </button>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Lat</div>
+                <div style="font-size: 11px; color: #1a1a1a; padding: 5px 6px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 3px; box-sizing: border-box;">${waypointMarker.lat.toFixed(5)}</div>
+            </div>
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Lng</div>
+                <div style="font-size: 11px; color: #1a1a1a; padding: 5px 6px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 3px; box-sizing: border-box;">${waypointMarker.lng.toFixed(5)}</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Alt (m)</div>
+                <input type="number" id="editWaypointAltitude" value="${waypointMarker.altitude}" style="
+                    width: 100%;
+                    padding: 5px 6px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    font-size: 11px;
+                    box-sizing: border-box;
+                " />
+            </div>
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Speed (m/s)</div>
+                <input type="number" id="editWaypointSpeed" value="${waypointMarker.speed}" step="0.1" style="
+                    width: 100%;
+                    padding: 5px 6px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    font-size: 11px;
+                    box-sizing: border-box;
+                " />
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Gimbal (°)</div>
+                <input type="number" id="editWaypointAngle" value="${waypointMarker.angle}" step="1" style="
+                    width: 100%;
+                    padding: 5px 6px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    font-size: 11px;
+                    box-sizing: border-box;
+                " />
+            </div>
+            <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Action</div>
+                <select id="editWaypointAction" style="
+                    width: 100%;
+                    padding: 5px 6px;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 3px;
+                    font-size: 11px;
+                    background: white;
+                    cursor: pointer;
+                    box-sizing: border-box;
+                ">
+                    ${select}
+                </select>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <button id="editWaypointSave" style="
+                padding: 6px 10px;
+                background-color: #22c55e;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#16a34a'" onmouseout="this.style.backgroundColor='#22c55e'">
+                Save
+            </button>
+            <button id="editWaypointRemovee" style="
+                padding: 6px 10px;
+                background-color: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#dc2626'" onmouseout="this.style.backgroundColor='#ef4444'">
+                Delete
+            </button>
+        </div>
+    </div>`;
 
 };
 

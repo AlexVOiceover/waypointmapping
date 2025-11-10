@@ -143,7 +143,8 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
   const {
     mapRef,
     genInfoWindowRef,
-    redrawFlightPaths
+    redrawFlightPaths,
+    flightParams
   } = useMapContext();
 
   /**
@@ -180,8 +181,8 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         LineSpacing: Number(requestData.LineSpacing || requestData.inDistance || 10),
         IsNorthSouth: Boolean(requestData.IsNorthSouth || requestData.isNorthSouth || requestData.NorthSouthDirection),
         UseEndpointsOnly: Boolean(requestData.UseEndpointsOnly || requestData.useEndpointsOnly),
-        AllPointsAction: String(requestData.AllPointsAction || requestData.allPointsAction || 'noAction'),
-        Action: String(requestData.AllPointsAction || requestData.allPointsAction || 'noAction'),
+        AllPointsAction: String(requestData.AllPointsAction || requestData.allPointsAction || 'takePhoto'),
+        Action: String(requestData.AllPointsAction || requestData.allPointsAction || 'takePhoto'),
         FinalAction: String(requestData.FinalAction || requestData.finalAction || '0'),
         FlipPath: Boolean(requestData.FlipPath || requestData.flipPath || false),
         UnitType: Number(requestData.UnitType || requestData.unitType || 0)
@@ -235,8 +236,10 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       }
 
       // Generate waypoints with clean data
+      console.log('Generating waypoints with request:', cleanRequest);
       const generatedPoints = await generateWaypoints(cleanRequest);
 
+      console.log('Waypoints generated:', generatedPoints);
       if (!generatedPoints || generatedPoints.length === 0) {
         throw new Error('No waypoints returned from the server');
       }
@@ -261,6 +264,9 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
 
       const flightPoints: google.maps.LatLngLiteral[] = [];
       const flagCount = cleanRequest.StartingIndex || 1;
+
+      console.log('mapRef.current exists:', !!mapRef.current);
+      console.log('Processing', generatedPoints.length, 'waypoints');
 
       // Process each waypoint returned from the API
       for (let i = 0; i < generatedPoints.length; i++) {
@@ -306,17 +312,16 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
                         (point.Altitude !== undefined ? point.Altitude :
                         (point.altitude !== undefined ? point.altitude : 60)));
 
-        // Create marker icon
+        console.log(`Creating marker for waypoint ${id} at (${latitude}, ${longitude})`);
+
+        // Create marker icon - simple blue circle with waypoint number
         const responseMarker: google.maps.Symbol = {
-          path: 'M 230 80 A 45 45, 0, 1, 0, 275 125 L 275 80 Z',
-          fillOpacity: 0.8,
-          fillColor: 'blue',
-          anchor: new google.maps.Point(228, 125),
-          strokeWeight: 3,
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillOpacity: 0.9,
+          fillColor: '#2563eb',
+          strokeWeight: 2,
           strokeColor: 'white',
-          scale: 0.3,
-          rotation: (point.Heading || point.heading || 0) - 45,
-          labelOrigin: new google.maps.Point(228, 125),
         };
 
         // Create the marker
@@ -328,11 +333,17 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
           map: mapRef.current,
           label: {
             text: id.toString(),
-            color: "white"
+            color: "white",
+            fontWeight: 'bold',
+            fontSize: '12px',
           },
           draggable: true,
           icon: responseMarker,
+          title: `Waypoint ${id}`,
+          zIndex: 10,
         }) as ExtendedMarker;
+
+        console.log(`Marker created for waypoint ${id}:`, genWaypointMarker);
 
         // Store additional data on the marker
         genWaypointMarker.id = id;
@@ -342,7 +353,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         genWaypointMarker.speed = point.Speed || point.speed || 2.5;
         genWaypointMarker.heading = point.Heading || point.heading || 0;
         genWaypointMarker.angle = point.GimbalAngle || point.gimbalAngle || -45;
-        genWaypointMarker.action = point.Action || point.action || 'noAction';
+        genWaypointMarker.action = point.Action || point.action || flightParams.allPointsAction || 'noAction';
 
         // Add event listeners to the marker
         google.maps.event.addListener(genWaypointMarker, "click", function (this: ExtendedMarker) {
@@ -350,12 +361,82 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
             genInfoWindowRef.current.close();
             genInfoWindowRef.current.setContent(GenerateWaypointInfoboxText(this));
             genInfoWindowRef.current.open(this.getMap(), this);
+
+            // Setup navigation buttons when info window is ready
+            const allMarkers = (mapRef.current as any)?.flags || [];
+            const currentWaypointId = this.id;
+            const currentIndex = allMarkers.findIndex((m: any) => m.id === currentWaypointId);
+
+            console.log('Info window opened for waypoint', currentWaypointId, 'at index', currentIndex, 'of', allMarkers.length);
+
+            // Listen for domready event on info window
+            const domreadyListener = google.maps.event.addListenerOnce(genInfoWindowRef.current, 'domready', () => {
+              console.log('Info window DOM ready, attaching button listeners');
+
+              const prevBtn = document.getElementById("waypointPrevBtn") as HTMLButtonElement;
+              const nextBtn = document.getElementById("waypointNextBtn") as HTMLButtonElement;
+
+              console.log('prevBtn found:', !!prevBtn, 'nextBtn found:', !!nextBtn);
+              console.log('Current index:', currentIndex, 'Total markers:', allMarkers.length);
+
+              // Disable/enable previous button
+              if (prevBtn) {
+                if (currentIndex === 0) {
+                  prevBtn.disabled = true;
+                  prevBtn.style.opacity = '0.5';
+                  prevBtn.style.cursor = 'not-allowed';
+                  prevBtn.title = 'At first waypoint';
+                } else {
+                  prevBtn.disabled = false;
+                  prevBtn.style.opacity = '1';
+                  prevBtn.style.cursor = 'pointer';
+                  prevBtn.title = 'Previous waypoint';
+                }
+
+                prevBtn.onclick = (e: MouseEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Previous clicked, current index:', currentIndex);
+                  if (currentIndex > 0) {
+                    const prevMarker = allMarkers[currentIndex - 1];
+                    console.log('Triggering click on marker:', prevMarker.id);
+                    google.maps.event.trigger(prevMarker, 'click');
+                  }
+                };
+              }
+
+              // Disable/enable next button
+              if (nextBtn) {
+                if (currentIndex === allMarkers.length - 1) {
+                  nextBtn.disabled = true;
+                  nextBtn.style.opacity = '0.5';
+                  nextBtn.style.cursor = 'not-allowed';
+                  nextBtn.title = 'At last waypoint';
+                } else {
+                  nextBtn.disabled = false;
+                  nextBtn.style.opacity = '1';
+                  nextBtn.style.cursor = 'pointer';
+                  nextBtn.title = 'Next waypoint';
+                }
+
+                nextBtn.onclick = (e: MouseEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Next clicked, current index:', currentIndex);
+                  if (currentIndex < allMarkers.length - 1) {
+                    const nextMarker = allMarkers[currentIndex + 1];
+                    console.log('Triggering click on marker:', nextMarker.id);
+                    google.maps.event.trigger(nextMarker, 'click');
+                  }
+                };
+              }
+            });
           }
 
           // Safely try to update form fields if they exist
           try {
             const selectedId = document.getElementById("selectedWaypointId");
-            if (selectedId) selectedId.innerHTML = this.id.toString();
+            if (selectedId) selectedId.innerHTML = `Waypoint ${this.id}`;
 
             const editAlt = document.getElementById("editWaypointAltitude") as HTMLInputElement;
             if (editAlt) editAlt.value = this.altitude.toString();
@@ -402,9 +483,14 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
             (mapRef.current as any).flags = [];
           }
           (mapRef.current as any).flags.push(genWaypointMarker);
+          console.log('Marker stored. Total markers:', (mapRef.current as any).flags.length);
+        } else {
+          console.error('mapRef.current is null - marker not added to map!');
         }
         flightPoints.push({ lat: latitude, lng: longitude });
       }
+
+      console.log('Total waypoints created:', (mapRef.current as any)?.flags?.length || 0);
 
       // Create a polyline connecting all waypoints
       const flightPath = new google.maps.Polyline({
@@ -413,6 +499,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         strokeColor: "#FF0000",
         strokeOpacity: 1.0,
         strokeWeight: 2,
+        zIndex: 100,
       });
 
       // Add the polyline to the map

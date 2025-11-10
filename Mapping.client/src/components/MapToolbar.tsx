@@ -10,6 +10,7 @@ interface MapToolbarProps {
   onDrawCircle: () => void;
   onDrawPolyline: () => void;
   onClearShapes: () => void;
+  onClearWaypoints: () => void;
   onProbeHeight: () => void;
   onClearProbeHeight: () => void;
   isProbeHeightActive?: boolean;
@@ -28,6 +29,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
   onDrawCircle,
   onDrawPolyline,
   onClearShapes,
+  onClearWaypoints,
   onProbeHeight,
   onClearProbeHeight,
   isProbeHeightActive = false,
@@ -128,10 +130,20 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
                   <Hand className="mr-2 h-4 w-4" />
                   Stop Drawing
                 </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={onClearShapes}
+                  className="w-full justify-start cursor-pointer"
+                  title="Clear all drawn areas"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear Areas
+                </Button>
               </div>}
             </div>
 
-            {/* Actions Section */}
+            {/* Waypoints Section */}
             <div className="bg-green-50 border-2 border-green-300 p-4">
               <button
                 onClick={() => toggleSection('actions')}
@@ -139,7 +151,7 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <Map className="h-4 w-4 text-green-600" />
-                  <span className="text-gray-900">Actions</span>
+                  <span className="text-gray-900">Waypoints</span>
                 </div>
                 {openSections.actions ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
               </button>
@@ -168,12 +180,12 @@ const MapToolbar: React.FC<MapToolbarProps> = ({
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={onClearShapes}
+                  onClick={onClearWaypoints}
                   className="w-full justify-start cursor-pointer"
-                  title="Clear all shapes and waypoints"
+                  title="Clear all waypoints"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Clear All
+                  Clear Waypoints
                 </Button>
               </div>}
             </div>

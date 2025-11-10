@@ -12,8 +12,8 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 
 // Map configuration as static constants to prevent unnecessary reloads
 const LIBRARIES: ('places' | 'geometry')[] = ['places', 'geometry'];
-const DEFAULT_CENTER = { lat: 60.1699, lng: 24.9384 }; // Helsinki
-const DEFAULT_ZOOM = 10;
+const DEFAULT_CENTER = { lat: 51.556437, lng: -0.110961 };
+const DEFAULT_ZOOM = 20; // Approximately 50m scale at equator
 
 // Shape styling options
 const RECTANGLE_OPTIONS = {
@@ -78,6 +78,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     path,
     setPath,
     clearAll,
+    clearWaypoints,
     flightParams,
     bounds,
     boundsType,
@@ -85,7 +86,9 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     setBounds,
     setBoundsType,
     setShapes,
-    setSelectedShape
+    setSelectedShape,
+    mapRef,
+    genInfoWindowRef
   } = useMapContext();
   const { generateWaypointsFromAPI, generateKml } = useWaypointAPI();
   const [startingIndex, setStartingIndex] = useState(1);
@@ -94,10 +97,27 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
   const elevatorServiceRef = useRef<google.maps.ElevationService | null>(null);
   const probeMarkersRef = useRef<google.maps.Marker[]>([]);
 
+  // Update mapRef when mapInstance changes
+  useEffect(() => {
+    if (mapInstance) {
+      mapRef.current = mapInstance;
+      console.log('mapRef updated with mapInstance');
+    }
+  }, [mapInstance, mapRef]);
+
+  // Initialize info window ref
+  useEffect(() => {
+    if (!genInfoWindowRef.current && mapInstance) {
+      genInfoWindowRef.current = new window.google.maps.InfoWindow();
+      console.log('InfoWindow initialized');
+    }
+  }, [mapInstance, genInfoWindowRef]);
+
   // Drawing state for custom shapes
   const [drawingPoints, setDrawingPoints] = useState<google.maps.LatLngLiteral[]>([]);
   const [rectangleStart, setRectangleStart] = useState<google.maps.LatLngLiteral | null>(null);
   const [circleCenter, setCircleCenter] = useState<google.maps.LatLngLiteral | null>(null);
+  const previewRectangleRef = useRef<google.maps.Rectangle | null>(null);
 
   // Custom drawing handlers
   const stopDrawing = useCallback(() => {
@@ -294,7 +314,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       isNorthSouth: flightParameters.isNorthSouth === true,
       UseEndpointsOnly: flightParameters.useEndpointsOnly === true,
       useEndpointsOnly: flightParameters.useEndpointsOnly === true,
-      AllPointsAction: String(flightParameters.allPointsAction || 'noAction'),
+      AllPointsAction: String(flightParameters.allPointsAction || 'takePhoto'),
       FinalAction: String(flightParameters.finalAction || '0'),
       FlipPath: Boolean(flightParameters.flipPath),
       UnitType: Number(flightParameters.unitType || 0)
@@ -389,9 +409,18 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       } else {
         // Second click - complete rectangle
         console.log('Rectangle: Second corner set, completing shape');
-        const bounds = new window.google.maps.LatLngBounds(rectangleStart, clickPoint);
-        const ne = bounds.getNorthEast();
-        const sw = bounds.getSouthWest();
+
+        // Create bounds with proper corner order (southwest and northeast)
+        const sw = new window.google.maps.LatLng(
+          Math.min(rectangleStart.lat, clickPoint.lat),
+          Math.min(rectangleStart.lng, clickPoint.lng)
+        );
+        const ne = new window.google.maps.LatLng(
+          Math.max(rectangleStart.lat, clickPoint.lat),
+          Math.max(rectangleStart.lng, clickPoint.lng)
+        );
+        const bounds = new window.google.maps.LatLngBounds(sw, ne);
+
         const nw = new window.google.maps.LatLng(ne.lat(), sw.lng());
         const se = new window.google.maps.LatLng(sw.lat(), ne.lng());
 
@@ -408,8 +437,16 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
 
         setShapes((prev: ShapeType[]) => [...prev, rectangle]);
         setSelectedShape(rectangle);
+
+        // Clean up preview rectangle
+        if (previewRectangleRef.current) {
+          previewRectangleRef.current.setMap(null);
+          previewRectangleRef.current = null;
+        }
+
         setRectangleStart(null);
         setActiveDrawingMode(null);
+        return; // Important: return here to prevent adding to path
       }
       return;
     }
@@ -462,30 +499,72 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       return;
     }
 
-    // Default behavior: add point to path (for other features)
-    console.log('Adding point to path');
-    setPath((prevPath) => [...prevPath, clickPoint]);
+    // Don't add points to path by default - only through explicit drawing tools
   }, [setPath, isProbeHeightActive, mapInstance, activeDrawingMode, rectangleStart, circleCenter, setBounds, setBoundsType, setShapes, setSelectedShape]);
 
   useEffect(() => {
     if (!mapInstance) return;
 
-    const listener = mapInstance.addListener('click', handleMapClick);
+    const clickListener = mapInstance.addListener('click', handleMapClick);
 
-    // Cleanup function to remove listener when dependencies change
+    // Add mouse move listener for rectangle preview
+    const mouseMoveListener = mapInstance.addListener('mousemove', (event: google.maps.MapMouseEvent) => {
+      if (activeDrawingMode === 'rectangle' && rectangleStart && event.latLng) {
+        const currentPoint = { lat: event.latLng.lat(), lng: event.latLng.lng() };
+
+        // Create bounds with proper corner order (southwest and northeast)
+        const sw = new window.google.maps.LatLng(
+          Math.min(rectangleStart.lat, currentPoint.lat),
+          Math.min(rectangleStart.lng, currentPoint.lng)
+        );
+        const ne = new window.google.maps.LatLng(
+          Math.max(rectangleStart.lat, currentPoint.lat),
+          Math.max(rectangleStart.lng, currentPoint.lng)
+        );
+        const bounds = new window.google.maps.LatLngBounds(sw, ne);
+
+        // Update or create preview rectangle
+        if (previewRectangleRef.current) {
+          previewRectangleRef.current.setBounds(bounds);
+        } else {
+          previewRectangleRef.current = new window.google.maps.Rectangle({
+            bounds: bounds,
+            fillColor: '#2196F3',
+            fillOpacity: 0.3,
+            strokeWeight: 2,
+            strokeColor: '#2196F3',
+            map: mapInstance,
+            editable: false,
+            clickable: false,
+            zIndex: 0,
+          });
+        }
+      }
+    });
+
+    // Cleanup function to remove listeners when dependencies change
     return () => {
-      if (listener) {
-        window.google.maps.event.removeListener(listener);
+      if (clickListener) {
+        window.google.maps.event.removeListener(clickListener);
+      }
+      if (mouseMoveListener) {
+        window.google.maps.event.removeListener(mouseMoveListener);
+      }
+      if (previewRectangleRef.current) {
+        previewRectangleRef.current.setMap(null);
+        previewRectangleRef.current = null;
       }
     };
-  }, [mapInstance, handleMapClick]);
+  }, [mapInstance, handleMapClick, activeDrawingMode, rectangleStart]);
 
-  // Change cursor when probe height is active
+  // Change cursor when probe height or drawing modes are active
   useEffect(() => {
     if (mapInstance) {
       const mapDiv = mapInstance.getDiv();
-      if (isProbeHeightActive) {
-        console.log('Setting cursor to crosshair for probe height mode');
+      const shouldShowCrosshair = isProbeHeightActive || activeDrawingMode !== null;
+
+      if (shouldShowCrosshair) {
+        console.log('Setting cursor to crosshair');
         mapDiv.style.setProperty('cursor', 'crosshair', 'important');
 
         const allElements = mapDiv.querySelectorAll('*');
@@ -495,7 +574,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
           }
         });
       } else {
-        console.log('Resetting cursor from probe height mode');
+        console.log('Resetting cursor to default');
         mapDiv.style.removeProperty('cursor');
 
         const allElements = mapDiv.querySelectorAll('*');
@@ -506,7 +585,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         });
       }
     }
-  }, [mapInstance, isProbeHeightActive]);
+  }, [mapInstance, isProbeHeightActive, activeDrawingMode]);
 
   // Keyboard support for completing polyline
   useEffect(() => {
@@ -654,23 +733,6 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
       )}
 
       {/* Render temporary drawing indicators */}
-      {activeDrawingMode === 'rectangle' && rectangleStart && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(33, 150, 243, 0.9)',
-          color: 'white',
-          padding: '8px 16px',
-          borderRadius: '4px',
-          pointerEvents: 'none',
-          zIndex: 1000
-        }}>
-          Click to set opposite corner
-        </div>
-      )}
-
       {activeDrawingMode === 'circle' && circleCenter && (
         <div style={{
           position: 'absolute',
@@ -719,6 +781,7 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
         onDrawCircle={handleDrawCircle}
         onDrawPolyline={handleDrawPolyline}
         onClearShapes={clearAll}
+        onClearWaypoints={clearWaypoints}
         onProbeHeight={handleProbeHeight}
         onClearProbeHeight={handleClearProbeMarkers}
         isProbeHeightActive={isProbeHeightActive}
