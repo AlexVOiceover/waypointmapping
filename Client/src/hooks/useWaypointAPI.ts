@@ -320,7 +320,11 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
 
               // Adjust altitude by the elevation difference
               generatedPoints[i].altitude = currentAltitude + elevationDifference;
-              console.log(`Waypoint ${i}: base=${currentAltitude}m, terrain_diff=${elevationDifference.toFixed(2)}m, adjusted=${generatedPoints[i].altitude.toFixed(2)}m`);
+
+              // Store the terrain elevation for reference
+              generatedPoints[i].terrainElevation = terrainElevation;
+
+              console.log(`Waypoint ${i}: base=${currentAltitude}m, terrain_diff=${elevationDifference.toFixed(2)}m, adjusted=${generatedPoints[i].altitude.toFixed(2)}m, terrain_elev=${terrainElevation.toFixed(2)}m`);
             }
           }
         } catch (error) {
@@ -414,6 +418,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         genWaypointMarker.heading = point.Heading || point.heading || 0;
         genWaypointMarker.angle = point.GimbalAngle || point.gimbalAngle || -45;
         genWaypointMarker.action = point.Action || point.action || flightParams.allPointsAction || 'noAction';
+        genWaypointMarker.terrainElevation = point.terrainElevation || null;
 
         // Add event listeners to the marker
         google.maps.event.addListener(genWaypointMarker, "click", function (this: ExtendedMarker) {
@@ -432,6 +437,17 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
             // Listen for domready event on info window
             const domreadyListener = google.maps.event.addListenerOnce(genInfoWindowRef.current, 'domready', () => {
               console.log('Info window DOM ready, attaching button listeners');
+
+              // Populate terrain elevation if available
+              const terrainElevationDiv = document.getElementById("waypointTerrainElevation");
+              if (terrainElevationDiv) {
+                const currentMarker = allMarkers.find((m: any) => m.id === currentWaypointId);
+                if (currentMarker && currentMarker.terrainElevation !== null && currentMarker.terrainElevation !== undefined) {
+                  terrainElevationDiv.textContent = `${currentMarker.terrainElevation.toFixed(2)}`;
+                } else {
+                  terrainElevationDiv.textContent = '--';
+                }
+              }
 
               const prevBtn = document.getElementById("waypointPrevBtn") as HTMLButtonElement;
               const nextBtn = document.getElementById("waypointNextBtn") as HTMLButtonElement;

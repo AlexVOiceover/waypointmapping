@@ -165,6 +165,13 @@ export const GenerateWaypointInfoboxText = (waypointMarker) => {
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
             <div>
+                <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Terrain Elev (m)</div>
+                <div id="waypointTerrainElevation" style="font-size: 11px; color: #1a1a1a; padding: 5px 6px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 3px; box-sizing: border-box;">--</div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div>
                 <div style="font-size: 10px; font-weight: 500; color: #666; margin-bottom: 2px;">Alt (m)</div>
                 <input type="number" id="editWaypointAltitude" value="${waypointMarker.altitude}" style="
                     width: 100%;
