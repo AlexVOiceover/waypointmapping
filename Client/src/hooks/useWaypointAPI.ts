@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { generateWaypoints } from '../services/WaypointService';
 import axios from 'axios';
 import { useMapContext } from '../context/MapContext';
+import { useFlightParamsContext } from '../context/FlightParamsContext';
 import { GenerateWaypointInfoboxText } from '../services/JSFunctions';
 
 // Get API base URL from environment variables
@@ -145,9 +146,10 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
   const {
     mapRef,
     genInfoWindowRef,
-    redrawFlightPaths,
-    flightParams
+    redrawFlightPaths
   } = useMapContext();
+
+  const flightParams = useFlightParamsContext();
 
   /**
    * Generate waypoints from server
@@ -287,7 +289,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
           });
 
           // Get elevations for all waypoints
-          const elevationResults = await new Promise<any[]>((resolve, reject) => {
+          const elevationResults = await new Promise<google.maps.ElevationResult[]>((resolve, reject) => {
             elevationService.getElevationForLocations(
               { locations },
               (results, status) => {
@@ -705,7 +707,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         throw 'Unknown error generating waypoints';
       }
     }
-  }, [mapRef, genInfoWindowRef, redrawFlightPaths]);
+  }, [mapRef, genInfoWindowRef, redrawFlightPaths, flightParams]);
 
   /**
    * Generate KML file for waypoints

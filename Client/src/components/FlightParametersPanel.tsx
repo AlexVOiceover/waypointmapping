@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMapContext } from '@/context/MapContext';
+import { useFlightParamsContext } from '@/context/FlightParamsContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -11,7 +11,7 @@ import { ChevronDown, ChevronRight, Settings, Camera, Route, Image } from 'lucid
  * Component for displaying and editing flight parameters
  */
 const FlightParametersPanel: React.FC = () => {
-  const { flightParams } = useMapContext();
+  const flightParams = useFlightParamsContext();
   const [openSections, setOpenSections] = useState({
     flightParams: true,
     cameraSettings: true,

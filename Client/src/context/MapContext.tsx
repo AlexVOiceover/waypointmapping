@@ -1,10 +1,7 @@
-import { createContext, useContext, useState, useRef, ReactNode } from 'react';
-import { useFlightParameters } from '../hooks/useFlightParameters';
+import { createContext, useContext, useRef, ReactNode } from 'react';
+import { useShapeContext } from './ShapeContext';
 
-// Shape type definition
-type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline;
-
-// TypeScript interfaces
+// Waypoint interface
 interface Waypoint {
   id: string | number;
   lat: number;
@@ -19,22 +16,6 @@ interface Waypoint {
 }
 
 interface MapContextValue {
-  // State
-  shapes: ShapeType[];
-  setShapes: React.Dispatch<React.SetStateAction<ShapeType[]>>;
-  waypoints: Waypoint[];
-  setWaypoints: React.Dispatch<React.SetStateAction<Waypoint[]>>;
-  selectedShape: ShapeType | null;
-  setSelectedShape: React.Dispatch<React.SetStateAction<ShapeType | null>>;
-  selectedMarker: Waypoint | null;
-  setSelectedMarker: React.Dispatch<React.SetStateAction<Waypoint | null>>;
-  path: google.maps.LatLngLiteral[];
-  setPath: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral[]>>;
-  bounds: string;
-  setBounds: React.Dispatch<React.SetStateAction<string>>;
-  boundsType: string | string[];
-  setBoundsType: React.Dispatch<React.SetStateAction<string | string[]>>;
-
   // Refs
   mapRef: React.MutableRefObject<google.maps.Map | null>;
   drawingManagerRef: React.MutableRefObject<google.maps.drawing.DrawingManager | null>;
@@ -48,7 +29,6 @@ interface MapContextValue {
   redrawMarkers: () => void;
   handleWaypointClick: (marker: Waypoint) => void;
   handleWaypointDragEnd: (marker: Waypoint) => void;
-  flightParams: ReturnType<typeof useFlightParameters>;
 }
 
 interface MapProviderProps {
@@ -60,15 +40,15 @@ const MapContext = createContext<MapContextValue | undefined>(undefined);
 
 // Context provider component
 export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
-  // Map state
-  const [shapes, setShapes] = useState<ShapeType[]>([]);
-  const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
-  const [selectedShape, setSelectedShape] = useState<ShapeType | null>(null);
-  const [selectedMarker, setSelectedMarker] = useState<Waypoint | null>(null);
-  const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]);
-  const [bounds, setBounds] = useState<string>('');
-  const [boundsType, setBoundsType] = useState<string | string[]>(['rectangle']);
-  const flightParams = useFlightParameters();
+  // Get shape context for functions that need it
+  const {
+    shapes,
+    setShapes,
+    setWaypoints,
+    setSelectedMarker,
+    setBounds,
+    setBoundsType
+  } = useShapeContext();
 
   // Refs
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -215,22 +195,6 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
 
   // Export the context value
   const value: MapContextValue = {
-    // State
-    shapes,
-    setShapes,
-    waypoints,
-    setWaypoints,
-    selectedShape,
-    setSelectedShape,
-    selectedMarker,
-    setSelectedMarker,
-    path,
-    setPath,
-    bounds,
-    setBounds,
-    boundsType,
-    setBoundsType,
-
     // Refs
     mapRef,
     drawingManagerRef,
@@ -243,8 +207,7 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     updateMarkerIcon,
     redrawMarkers,
     handleWaypointClick,
-    handleWaypointDragEnd,
-    flightParams
+    handleWaypointDragEnd
   };
 
   return <MapContext.Provider value={value}>{children}</MapContext.Provider>;

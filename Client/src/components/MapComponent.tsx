@@ -5,7 +5,10 @@ import FlightParametersPanel from './FlightParametersPanel';
 import MapToolbar from './MapToolbar';
 import LocationButton from './LocationButton';
 import { useWaypointAPI } from '../hooks/useWaypointAPI';
-import { MapProvider, useMapContext } from '../context/MapContext';
+import { useMapContext } from '../context/MapContext';
+import { useShapeContext } from '../context/ShapeContext';
+import { useFlightParamsContext } from '../context/FlightParamsContext';
+import { AppProviders } from '../context/AppProviders';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
 // Map configuration as static constants to prevent unnecessary reloads
@@ -72,21 +75,28 @@ interface PlaceAutocompleteSelectEvent extends Event {
 type ShapeType = google.maps.Rectangle | google.maps.Circle | google.maps.Polyline;
 
 const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInstance, setLatitude, setLongitude }) => {
+  // Map context - refs and map-specific functions
   const {
-    path,
     clearAll,
     clearWaypoints,
-    flightParams,
+    mapRef,
+    genInfoWindowRef
+  } = useMapContext();
+
+  // Shape context - shapes, waypoints, bounds
+  const {
+    path,
     bounds,
     boundsType,
     selectedShape,
     setBounds,
     setBoundsType,
     setShapes,
-    setSelectedShape,
-    mapRef,
-    genInfoWindowRef
-  } = useMapContext();
+    setSelectedShape
+  } = useShapeContext();
+
+  // Flight params context - all flight parameters
+  const flightParams = useFlightParamsContext();
   const { generateWaypointsFromAPI, generateKml } = useWaypointAPI();
   const [startingIndex, setStartingIndex] = useState(1);
   const [isProbeHeightActive, setIsProbeHeightActive] = useState(false);
@@ -846,7 +856,7 @@ const MapComponent: React.FC = () => {
   }
 
   return (
-    <MapProvider>
+    <AppProviders>
       <div className="h-screen relative">
         {/* Collapsible Side Panel - using absolute positioning with natural height */}
         <div className={`absolute left-0 top-0 transition-all duration-300 ease-in-out z-40 overflow-hidden ${isPanelCollapsed ? 'w-0' : 'w-60'}`}>
@@ -982,7 +992,7 @@ const MapComponent: React.FC = () => {
           </GoogleMap>
         </div>
       </div>
-    </MapProvider>
+    </AppProviders>
   );
 };
 
