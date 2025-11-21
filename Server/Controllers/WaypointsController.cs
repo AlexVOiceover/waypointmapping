@@ -1,12 +1,12 @@
-﻿using KarttaBackEnd2.Server.DTOs;
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
-using KarttaBackEnd2.Server.Services;
+﻿using WaypointMapping.Server.DTOs;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
+using WaypointMapping.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace KarttaBackEnd2.Server.Controllers
+namespace WaypointMapping.Server.Controllers
 {
     //[Authorize]
     [ApiController]

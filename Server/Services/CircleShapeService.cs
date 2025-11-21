@@ -1,10 +1,10 @@
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace KarttaBackEnd2.Server.Services
+namespace WaypointMapping.Server.Services
 {
     /// <summary>
     /// Service for generating waypoints for circle shapes

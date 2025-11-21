@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using KarttaBackEnd2.Server.Controllers;
-using KarttaBackEnd2.Server.DTOs;
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
+using WaypointMapping.Server.Controllers;
+using WaypointMapping.Server.DTOs;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace KarttaBackendTest
+namespace Server.Tests
 {
     public class WaypointControllerTests
     {

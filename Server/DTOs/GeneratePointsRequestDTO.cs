@@ -1,9 +1,9 @@
-﻿using KarttaBackEnd2.Server.Models;
+﻿using WaypointMapping.Server.Models;
 using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace KarttaBackEnd2.Server.DTOs
+namespace WaypointMapping.Server.DTOs
 {
     /// <summary>
     /// Data Transfer Object for waypoint generation requests

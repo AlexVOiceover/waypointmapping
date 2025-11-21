@@ -8,11 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
-using KarttaBackEnd2.Server.Services;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
+using WaypointMapping.Server.Services;
 
-namespace KarttaBackendTest
+namespace Server.Tests
 {
     public class IntegrationTests
     {
@@ -22,12 +22,13 @@ namespace KarttaBackendTest
         {
             // Set up dependency injection
             var services = new ServiceCollection();
-            
+
             // Register required services
             services.AddLogging(configure => configure.AddConsole());
+
+            // Register service components (matches production)
+            services.AddScoped<WaypointService>();
             services.AddScoped<IWaypointService, WaypointService>();
-            services.AddScoped<WaypointServiceV2>();
-            services.AddScoped<WaypointServiceAdapter>();
             
             // Register shape services
             services.AddScoped<IShapeService, RectangleShapeService>();
@@ -166,7 +167,7 @@ namespace KarttaBackendTest
         public async Task ShapeData_WaypointGeneration_WithMultipleShapes()
         {
             // Arrange
-            var waypointServiceV2 = _serviceProvider.GetRequiredService<WaypointServiceV2>();
+            var waypointService = _serviceProvider.GetRequiredService<WaypointService>();
             
             // Create two shapes (rectangle and polyline)
             var shapes = new List<ShapeData>
@@ -177,8 +178,10 @@ namespace KarttaBackendTest
                     Type = ShapeTypes.Rectangle,
                     Coordinates = new List<Coordinate>
                     {
-                        new Coordinate { Lat = 60.0, Lng = 24.0 },
-                        new Coordinate { Lat = 61.0, Lng = 25.0 }
+                        new Coordinate { Lat = 60.0, Lng = 24.0 },  // SW corner
+                        new Coordinate { Lat = 60.0, Lng = 25.0 },  // SE corner
+                        new Coordinate { Lat = 61.0, Lng = 25.0 },  // NE corner
+                        new Coordinate { Lat = 61.0, Lng = 24.0 }   // NW corner
                     }
                 },
                 new ShapeData
@@ -207,8 +210,8 @@ namespace KarttaBackendTest
                 UnitType = 0
             };
             
-            // Act - use WaypointServiceV2 directly since it properly handles multiple shapes
-            var waypoints = await waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            // Act - use WaypointService directly since it properly handles multiple shapes
+            var waypoints = await waypointService.GenerateWaypointsAsync(shapes, parameters);
             
             // Assert
             Assert.NotNull(waypoints);

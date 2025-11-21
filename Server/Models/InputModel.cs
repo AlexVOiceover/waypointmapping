@@ -1,6 +1,6 @@
-﻿namespace KarttaBackEnd2.Server.Models
+﻿namespace WaypointMapping.Server.Models
 {
-    public class SyoteModel
+    public class InputModel
     {
         public List<WaypointModel> Waypoints { get; set; }
         public string ?MissionName { get; set; }

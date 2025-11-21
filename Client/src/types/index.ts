@@ -1,5 +1,5 @@
 /**
- * Common type definitions for the DroneKartta application
+ * Common type definitions for the WaypointMapping application
  */
 
 /**

@@ -1,29 +1,27 @@
-﻿using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
-using System.Globalization;
+﻿using System.Globalization;
 using System.IO.Compression;
 using System.Xml.Linq;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
 
-namespace KarttaBackEnd2.Server.Services
+namespace WaypointMapping.Server.Services
 {
     public class KMZService : IKMZService
     {
-        private static readonly XNamespace kmlNs = "http://www.opengis.net/kml/2.2";   // KML nimitila
-        private static readonly XNamespace wpmlNs = "http://www.dji.com/wpmz/1.0.2";   // WPML nimitila
+        private static readonly XNamespace kmlNs = "http://www.opengis.net/kml/2.2"; // KML namespace
+        private static readonly XNamespace wpmlNs = "http://www.dji.com/wpmz/1.0.2"; // WPML namespace
 
         public async Task<byte[]> GenerateKmzAsync(FlyToWaylineRequest request)
         {
-            // Aseta oletusarvot tarvittaessa
+            // Set default values if needed
             SetDefaultValues(request);
-           
-
-            // Generoi KML sisällön ohjelmallisesti
+            // Generate KML content programmatically
             string kmlContent = await GenerateKmlAsync(request);
 
-            // Generoi WPML sisällön ohjelmallisesti
+            // Generate WPML content programmatically
             string wpmlContent = await GenerateWpmlAsync(request);
 
-            // Luo KMZ (ZIP) tiedosto KML- ja WPML-tiedostoilla
+            // Create KMZ (ZIP) file with KML and WPML files
             return await CreateKmzAsync(kmlContent, wpmlContent);
         }
 
@@ -34,73 +32,122 @@ namespace KarttaBackEnd2.Server.Services
                 request.Waypoints = GetDefaultWaypoints();
             }
 
-            // Aseta oletusarvot tarvittaessa
+            // Set default values if needed
             request.FlyToWaylineMode ??= "safely";
             request.FinishAction ??= "noAction";
             request.ExitOnRCLost ??= "executeLostAction";
             request.ExecuteRCLostAction ??= "hover";
-            request.GlobalTransitionalSpeed = request.GlobalTransitionalSpeed <= 0 ? 2.5 : request.GlobalTransitionalSpeed;
+            request.GlobalTransitionalSpeed =
+                request.GlobalTransitionalSpeed <= 0 ? 2.5 : request.GlobalTransitionalSpeed;
 
             if (request.DroneInfo == null)
             {
                 request.DroneInfo = new DroneInfo
                 {
-                    DroneEnumValue = 68,  // Oletusarvo
-                    DroneSubEnumValue = 0  // Oletusarvo
+                    DroneEnumValue = 68, // Default value
+                    DroneSubEnumValue = 0 // Default value
                 };
             }
         }
 
         private List<WaypointGen> GetDefaultWaypoints()
         {
-            // Oletusreittipisteet
+            // Default waypoints
             return new List<WaypointGen>
             {
-                new WaypointGen { Latitude = 60.4040751527782, Longitude = 26.254953488815023, ExecuteHeight = 40, WaypointSpeed = 2.5, Index = 0 },
-                new WaypointGen { Latitude = 60.4040751527782, Longitude = 26.25485348881502, ExecuteHeight = 40, WaypointSpeed = 2.5, Index = 1 },
-                new WaypointGen { Latitude = 60.4040751527782, Longitude = 26.25275348881502, ExecuteHeight = 40, WaypointSpeed = 2.5, Index = 2 }
+                new WaypointGen
+                {
+                    Latitude = 60.4040751527782,
+                    Longitude = 26.254953488815023,
+                    ExecuteHeight = 40,
+                    WaypointSpeed = 2.5,
+                    Index = 0
+                },
+                new WaypointGen
+                {
+                    Latitude = 60.4040751527782,
+                    Longitude = 26.25485348881502,
+                    ExecuteHeight = 40,
+                    WaypointSpeed = 2.5,
+                    Index = 1
+                },
+                new WaypointGen
+                {
+                    Latitude = 60.4040751527782,
+                    Longitude = 26.25275348881502,
+                    ExecuteHeight = 40,
+                    WaypointSpeed = 2.5,
+                    Index = 2
+                }
             };
         }
 
         private async Task<string> GenerateKmlAsync(FlyToWaylineRequest request)
         {
-            // Luo KML sisällön ohjelmallisesti
+            // Create KML content programmatically
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var kmlDocument = new XDocument(
-            new XElement(kmlNs + "kml",   // KML nimitila juurielementissä
-                new XAttribute(XNamespace.Xmlns + "wpml", wpmlNs),   // WPML nimitila määritelty juuritasolla
-                new XElement(kmlNs + "Document",
-                    // Käytetään wpmlNs ja kmlNs vain siellä, missä niitä oikeasti tarvitaan.
-                    new XElement(wpmlNs + "missionConfig",
-                        new XElement(wpmlNs + "flyToWaylineMode", request.FlyToWaylineMode),
-                        new XElement(wpmlNs + "finishAction", request.FinishAction),
-                        new XElement(wpmlNs + "exitOnRCLost", request.ExitOnRCLost),
-                        new XElement(wpmlNs + "executeRCLostAction", request.ExecuteRCLostAction),
-                        new XElement(wpmlNs + "globalTransitionalSpeed", request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture) ?? "2.5"),
-                        new XElement(wpmlNs + "droneInfo",
-                            new XElement(wpmlNs + "droneEnumValue", request.DroneInfo?.DroneEnumValue.ToString(CultureInfo.InvariantCulture) ?? "68"),
-                            new XElement(wpmlNs + "droneSubEnumValue", request.DroneInfo?.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture) ?? "0")
-                        )
-                    ),
-                    // ActionGroup lisätty oikein WPML-nimitilaan
-                    new XElement(wpmlNs + "actionGroup",
-                        new XElement(wpmlNs + "actionGroupId", "1"),
-                        new XElement(wpmlNs + "actionGroupMode", "parallel"),
-                        new XElement(wpmlNs + "actionTrigger",
-                            new XElement(wpmlNs + "actionTriggerType", "timeInterval"),
-                            new XElement(wpmlNs + "timeInterval", request.Interval.ToString(CultureInfo.InvariantCulture))
+                new XElement(
+                    kmlNs + "kml", // KML namespace in root element
+                    new XAttribute(XNamespace.Xmlns + "wpml", wpmlNs), // WPML namespace defined at root level
+                    new XElement(
+                        kmlNs + "Document",
+                        // Use wpmlNs and kmlNs only where they are actually needed
+                        new XElement(
+                            wpmlNs + "missionConfig",
+                            new XElement(wpmlNs + "flyToWaylineMode", request.FlyToWaylineMode),
+                            new XElement(wpmlNs + "finishAction", request.FinishAction),
+                            new XElement(wpmlNs + "exitOnRCLost", request.ExitOnRCLost),
+                            new XElement(
+                                wpmlNs + "executeRCLostAction",
+                                request.ExecuteRCLostAction
+                            ),
+                            new XElement(
+                                wpmlNs + "globalTransitionalSpeed",
+                                request.GlobalTransitionalSpeed.ToString(
+                                    CultureInfo.InvariantCulture
+                                ) ?? "2.5"
+                            ),
+                            new XElement(
+                                wpmlNs + "droneInfo",
+                                new XElement(
+                                    wpmlNs + "droneEnumValue",
+                                    request.DroneInfo?.DroneEnumValue.ToString(
+                                        CultureInfo.InvariantCulture
+                                    ) ?? "68"
+                                ),
+                                new XElement(
+                                    wpmlNs + "droneSubEnumValue",
+                                    request.DroneInfo?.DroneSubEnumValue.ToString(
+                                        CultureInfo.InvariantCulture
+                                    ) ?? "0"
+                                )
+                            )
                         ),
-                        new XElement(wpmlNs + "action",
-                            new XElement(wpmlNs + "actionId", "1"),
-                            new XElement(wpmlNs + "actionActuatorFunc", "takePhoto")
+                        // ActionGroup added correctly to WPML namespace
+                        new XElement(
+                            wpmlNs + "actionGroup",
+                            new XElement(wpmlNs + "actionGroupId", "1"),
+                            new XElement(wpmlNs + "actionGroupMode", "parallel"),
+                            new XElement(
+                                wpmlNs + "actionTrigger",
+                                new XElement(wpmlNs + "actionTriggerType", "timeInterval"),
+                                new XElement(
+                                    wpmlNs + "timeInterval",
+                                    request.Interval.ToString(CultureInfo.InvariantCulture)
+                                )
+                            ),
+                            new XElement(
+                                wpmlNs + "action",
+                                new XElement(wpmlNs + "actionId", "1"),
+                                new XElement(wpmlNs + "actionActuatorFunc", "takePhoto")
+                            )
                         )
                     )
                 )
-            )
-        );
+            );
 
-
-            // Palauta KML sisällön merkkijonona
+            // Return KML content as string
             using var stringWriter = new StringWriter();
             kmlDocument.Save(stringWriter);
             return await Task.FromResult(stringWriter.ToString());
@@ -110,35 +157,51 @@ namespace KarttaBackEnd2.Server.Services
         {
             var wpmlContent = new System.Text.StringBuilder();
 
-            // WPML-otsikot ja missionConfig-osio
+            // WPML headers and missionConfig section
             wpmlContent.AppendLine(@"<?xml version=""1.0"" encoding=""UTF-8""?>");
             wpmlContent.AppendLine($@"<kml xmlns=""{kmlNs}"" xmlns:wpml=""{wpmlNs}"">");
             wpmlContent.AppendLine(@"  <Document>");
             wpmlContent.AppendLine(@"    <wpml:missionConfig>");
-            wpmlContent.AppendLine($@"      <wpml:flyToWaylineMode>{request.FlyToWaylineMode}</wpml:flyToWaylineMode>");
-            wpmlContent.AppendLine($@"      <wpml:finishAction>{request.FinishAction}</wpml:finishAction>");
-            wpmlContent.AppendLine($@"      <wpml:exitOnRCLost>{request.ExitOnRCLost}</wpml:exitOnRCLost>");
-            wpmlContent.AppendLine($@"      <wpml:executeRCLostAction>{request.ExecuteRCLostAction}</wpml:executeRCLostAction>");
-            wpmlContent.AppendLine($@"      <wpml:globalTransitionalSpeed>{request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture)}</wpml:globalTransitionalSpeed>");
+            wpmlContent.AppendLine(
+                $@"      <wpml:flyToWaylineMode>{request.FlyToWaylineMode}</wpml:flyToWaylineMode>"
+            );
+            wpmlContent.AppendLine(
+                $@"      <wpml:finishAction>{request.FinishAction}</wpml:finishAction>"
+            );
+            wpmlContent.AppendLine(
+                $@"      <wpml:exitOnRCLost>{request.ExitOnRCLost}</wpml:exitOnRCLost>"
+            );
+            wpmlContent.AppendLine(
+                $@"      <wpml:executeRCLostAction>{request.ExecuteRCLostAction}</wpml:executeRCLostAction>"
+            );
+            wpmlContent.AppendLine(
+                $@"      <wpml:globalTransitionalSpeed>{request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture)}</wpml:globalTransitionalSpeed>"
+            );
             wpmlContent.AppendLine(@"      <wpml:droneInfo>");
-            wpmlContent.AppendLine($@"        <wpml:droneEnumValue>{request.DroneInfo?.DroneEnumValue.ToString(CultureInfo.InvariantCulture) ?? "68"}</wpml:droneEnumValue>");
-            wpmlContent.AppendLine($@"        <wpml:droneSubEnumValue>{request.DroneInfo?.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture) ?? "0"}</wpml:droneSubEnumValue>");
+            wpmlContent.AppendLine(
+                $@"        <wpml:droneEnumValue>{request.DroneInfo?.DroneEnumValue.ToString(CultureInfo.InvariantCulture) ?? "68"}</wpml:droneEnumValue>"
+            );
+            wpmlContent.AppendLine(
+                $@"        <wpml:droneSubEnumValue>{request.DroneInfo?.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture) ?? "0"}</wpml:droneSubEnumValue>"
+            );
             wpmlContent.AppendLine(@"      </wpml:droneInfo>");
             wpmlContent.AppendLine(@"    </wpml:missionConfig>");
 
-            // Aloita Folder-osio
+            // Start Folder section
             wpmlContent.AppendLine(@"    <Folder>");
-            wpmlContent.AppendLine(@"      <wpml:templateId>1</wpml:templateId>"); // Viitataan actionGroupiin
-            wpmlContent.AppendLine(@"      <wpml:executeHeightMode>relativeToStartPoint</wpml:executeHeightMode>");
+            wpmlContent.AppendLine(@"      <wpml:templateId>1</wpml:templateId>"); // Reference to actionGroup
+            wpmlContent.AppendLine(
+                @"      <wpml:executeHeightMode>relativeToStartPoint</wpml:executeHeightMode>"
+            );
             wpmlContent.AppendLine(@"      <wpml:waylineId>0</wpml:waylineId>");
             wpmlContent.AppendLine(@"      <wpml:distance>0</wpml:distance>");
             wpmlContent.AppendLine(@"      <wpml:duration>0</wpml:duration>");
             wpmlContent.AppendLine(@"      <wpml:autoFlightSpeed>2.5</wpml:autoFlightSpeed>");
 
-            // Lisää Placemark-elementit reittipisteille
+            // Add Placemark elements for waypoints
             foreach (var waypoint in request.Waypoints)
             {
-                // Määritellään muuttujat reittipisteille
+                // Define variables for waypoints
                 var lat = waypoint.Latitude.ToString("F14", CultureInfo.InvariantCulture);
                 var lng = waypoint.Longitude.ToString("F14", CultureInfo.InvariantCulture);
                 var height = waypoint.ExecuteHeight.ToString(CultureInfo.InvariantCulture);
@@ -149,15 +212,17 @@ namespace KarttaBackEnd2.Server.Services
                 var headingAngleEnable = waypoint.WaypointHeadingAngleEnable ?? 0;
                 var pathMode = waypoint.WaypointHeadingPathMode ?? "followBadArc";
                 var turnMode = waypoint.WaypointTurnMode ?? "toPointAndPassWithContinuityCurvature";
-                var dampingDist = waypoint.WaypointTurnDampingDist.ToString(CultureInfo.InvariantCulture) ?? "0";
+                var dampingDist =
+                    waypoint.WaypointTurnDampingDist.ToString(CultureInfo.InvariantCulture) ?? "0";
                 var useStraightLine = waypoint.UseStraightLine ?? "0";
 
                 // Determine the action to use based on waypoint.Action property
                 string actionActuatorFunc = GetActionActuatorFunc(waypoint.Action);
                 string actionXml = GetActionXml(actionActuatorFunc);
 
-                // Lisää Placemark osio WPML sisällössä
-                wpmlContent.AppendLine($@"
+                // Add Placemark section in WPML content
+                wpmlContent.AppendLine(
+                    $@"
                        <Placemark>
               <Point>
                   <coordinates>{lng},{lat}</coordinates>
@@ -204,7 +269,8 @@ namespace KarttaBackEnd2.Server.Services
             </wpml:actionActuatorFuncParam>
           </wpml:action>
         </wpml:actionGroup>
-          </Placemark>");
+          </Placemark>"
+                );
             }
 
             wpmlContent.AppendLine(@"    </Folder>");
@@ -220,7 +286,7 @@ namespace KarttaBackEnd2.Server.Services
             {
                 using (var zipArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                 {
-                    // Luo KML-tiedosto KMZ:ään
+                    // Create KML file in KMZ
                     var kmlEntry = zipArchive.CreateEntry("template.kml");
                     using (var kmlStream = kmlEntry.Open())
                     using (var streamWriter = new StreamWriter(kmlStream))
@@ -228,7 +294,7 @@ namespace KarttaBackEnd2.Server.Services
                         await streamWriter.WriteAsync(kmlContent);
                     }
 
-                    // Luo WPML-tiedosto KMZ:ään
+                    // Create WPML file in KMZ
                     var wpmlEntry = zipArchive.CreateEntry("waylines.wpml");
                     using (var wpmlStream = wpmlEntry.Open())
                     using (var streamWriter = new StreamWriter(wpmlStream))
@@ -252,7 +318,7 @@ namespace KarttaBackEnd2.Server.Services
                 "startrecord" => "startRecord",
                 "stoprecord" => "stopRecord",
                 "noaction" => "none",
-                _ => "none"  // Default to no action if not recognized
+                _ => "none" // Default to no action if not recognized
             };
         }
 
@@ -263,7 +329,8 @@ namespace KarttaBackEnd2.Server.Services
         {
             return actionActuatorFunc switch
             {
-                "takePhoto" => @"
+                "takePhoto"
+                    => @"
                   <wpml:action>
                       <wpml:actionId>1</wpml:actionId>
                       <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
@@ -275,7 +342,8 @@ namespace KarttaBackEnd2.Server.Services
                       <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
                     </wpml:actionActuatorFuncParam>
                   </wpml:action>",
-                "startRecord" => @"
+                "startRecord"
+                    => @"
                   <wpml:action>
                       <wpml:actionId>1</wpml:actionId>
                       <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
@@ -287,7 +355,8 @@ namespace KarttaBackEnd2.Server.Services
                       <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
                     </wpml:actionActuatorFuncParam>
                   </wpml:action>",
-                "stopRecord" => @"
+                "stopRecord"
+                    => @"
                   <wpml:action>
                     <wpml:actionId>6</wpml:actionId>
                     <wpml:actionActuatorFunc>stopRecord</wpml:actionActuatorFunc>
@@ -295,9 +364,8 @@ namespace KarttaBackEnd2.Server.Services
                       <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
                     </wpml:actionActuatorFuncParam>
                   </wpml:action>",
-                _ => ""  // No action - empty action group
+                _ => "" // No action - empty action group
             };
         }
-
     }
 }

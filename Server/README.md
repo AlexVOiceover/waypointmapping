@@ -1,6 +1,6 @@
-# DroneKartta - Drone Flight Path Planning Application
+# WaypointMapping - Drone Flight Path Planning Application
 
-DroneKartta is a web-based application for planning and visualizing drone flight paths. It allows users to create waypoints based on different geometric shapes (rectangles, circles, polygons, and polylines) and generate KML files for drone flight missions.
+WaypointMapping is a web-based application for planning and visualizing drone flight paths. It allows users to create waypoints based on different geometric shapes (rectangles, circles, polygons, and polylines) and generate KML files for drone flight missions.
 
 ## Features
 
@@ -125,19 +125,19 @@ The waypoint generation algorithm is optimized for:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/DroneKartta.git
-   cd DroneKartta
+   git clone https://github.com/yourusername/WaypointMapping.git
+   cd WaypointMapping
    ```
 
 2. Install client dependencies:
    ```
-   cd ReactApp2.Client
+   cd Client
    npm install
    ```
 
 3. Install server dependencies:
    ```
-   cd ../ReactApp2.Server
+   cd ../Server
    dotnet restore
    ```
 
@@ -145,13 +145,13 @@ The waypoint generation algorithm is optimized for:
 
 1. Start the backend server:
    ```
-   cd ReactApp2.Server
+   cd Server
    dotnet run
    ```
 
 2. Start the frontend development server:
    ```
-   cd ReactApp2.Client
+   cd Client
    npm run dev
    ```
 
@@ -192,13 +192,13 @@ The waypoint generation algorithm is optimized for:
 
 ## Project Structure
 
-The DroneKartta solution consists of the following projects:
+The WaypointMapping solution consists of the following projects:
 
-- **ReactApp2.Client**: Frontend React application with TypeScript
-- **ReactApp2.Server**: Backend .NET API with domain logic
-- **KarttaBackendTest**: Test project for backend services
+- **Client**: Frontend React application with TypeScript
+- **Server**: Backend .NET API with domain logic
+- **Server.Tests**: Test project for backend services
 
-The backend codebase uses the namespace `KarttaBackEnd2.Server` for consistency with legacy code.
+The backend codebase uses the namespace `WaypointMapping.Server` for consistency with legacy code.
 
 ## Testing
 
@@ -206,11 +206,11 @@ The application includes comprehensive tests for both frontend and backend compo
 
 ```
 # Run backend tests
-cd KarttaBackendTest
+cd Server.Tests
 dotnet test
 
 # Run frontend tests
-cd ReactApp2.Client
+cd Client
 npm test
 ```
 
@@ -226,7 +226,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contributing
 
-Contributions to DroneKartta are welcome! Here's how you can help improve the application:
+Contributions to WaypointMapping are welcome! Here's how you can help improve the application:
 
 ### Areas for Improvement
 

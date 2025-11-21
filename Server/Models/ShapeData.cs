@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
     /// <summary>
     /// Data model for shape information used in waypoint generation

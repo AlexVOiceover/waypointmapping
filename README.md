@@ -1,7 +1,7 @@
-# DroneKartta - Drone Flight Path Planning Application
+# WaypointMapping - Drone Flight Path Planning Application
 
 
-DroneKartta is a web-based application for planning and visualizing DJI drone flight paths. It allows users to create waypoints based on different geometric shapes (rectangles, circles, polygons, and polylines) and generate KML files for drone flight missions. Tested with DJI mini 4 pro and AIR 3. Propaply works with other DJI drones, but havent tested with anything else.
+WaypointMapping is a web-based application for planning and visualizing DJI drone flight paths. It allows users to create waypoints based on different geometric shapes (rectangles, circles, polygons, and polylines) and generate KML files for drone flight missions. Tested with DJI mini 4 pro and AIR 3. Propaply works with other DJI drones, but havent tested with anything else.
 
 If the mapping area is large you should maybe use option "useendpointsonly" so it will not generate too many waypoints because DJI controller may go crazy if you upload too many waypoints. Propably works with the other 
 option too, but if you open map in DJI controller screen it will propably crash. 
@@ -122,8 +122,8 @@ The waypoint generation algorithm is optimized for:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/DroneKartta.git
-   cd DroneKartta
+   git clone https://github.com/yourusername/WaypointMapping.git
+   cd WaypointMapping
    ```
 
 2. Install client dependencies:
@@ -190,11 +190,11 @@ The waypoint generation algorithm is optimized for:
 
 ## Project Structure
 
-The DroneKartta solution consists of the following projects:
+The WaypointMapping solution consists of the following projects:
 
 - **Client**: Frontend React application with TypeScript
 - **Server**: Backend .NET API with domain logic
-- **KarttaBackendTest**: Test project for backend services
+- **Server.Tests**: Test project for backend services
 
 The backend codebase uses the namespace `MappingBackend.Server` for consistency.
 
@@ -204,7 +204,7 @@ The application includes comprehensive tests for both frontend and backend compo
 
 ```
 # Run backend tests
-cd KarttaBackendTest
+cd Server.Tests
 dotnet test
 
 # Run frontend tests
@@ -224,7 +224,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Contributing
 
-Contributions to DroneKartta are welcome! Here's how you can help improve the application:
+Contributions to WaypointMapping are welcome! Here's how you can help improve the application:
 
 ### Areas for Improvement
 

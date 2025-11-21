@@ -1,4 +1,4 @@
-﻿namespace KarttaBackEnd2.Server.Models
+﻿namespace WaypointMapping.Server.Models
 {
     internal class DataElement : SharpKml.Dom.Data
     {

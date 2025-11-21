@@ -1,11 +1,11 @@
-using KarttaBackEnd2.Server.Data;
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
-using KarttaBackEnd2.Server.Services;
+using WaypointMapping.Server.Data;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
+using WaypointMapping.Server.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
-namespace ReactApp2.Server
+namespace WaypointMapping.Server
 {
     public class Program
     {
@@ -19,7 +19,7 @@ namespace ReactApp2.Server
             // Register dependencies for both implementations
             RegisterServices(builder.Services);
 
-            var cultureInfo = new CultureInfo("fi-fi");
+            var cultureInfo = new CultureInfo("en-US");
             CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
             
             builder.Services.AddControllers();
@@ -48,21 +48,14 @@ namespace ReactApp2.Server
 
         private static void RegisterServices(IServiceCollection services)
         {
-            // STEP 2: Register both implementations during the transition period
-            // Legacy service
-            services.AddScoped<WaypointService>();
-            
-            // New service components
+            // Register service components
             services.AddScoped<IGeometryService, GeometryService>();
             services.AddScoped<IShapeService, RectangleShapeService>();
             services.AddScoped<IShapeService, PolygonShapeService>();
             services.AddScoped<IShapeService, CircleShapeService>();
             services.AddScoped<IShapeService, PolylineShapeService>();
-            services.AddScoped<WaypointServiceV2>();
-            
-            // Use the adapter as the implementation of IWaypointService
-            services.AddScoped<IWaypointService, WaypointServiceAdapter>();
-            
+            services.AddScoped<IWaypointService, WaypointService>();
+
             // Other services
             services.AddScoped<IKMZService, KMZService>();
         }

@@ -1,7 +1,7 @@
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
 
-namespace KarttaBackEnd2.Server.Services
+namespace WaypointMapping.Server.Services
 {
     public class GeometryService : IGeometryService
     {

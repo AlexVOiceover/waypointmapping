@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
     /// <summary>
     /// Represents a waypoint for drone flight paths

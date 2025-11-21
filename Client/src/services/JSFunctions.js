@@ -2,7 +2,7 @@
 
 export const calculateDistanceBetweenPaths = (altitude, overlap, fov) => {
     const overlapFactor = (1 - overlap / 100);
-    const fovRadians = (fov / 2) * (Math.PI / 180); // Muutetaan FOV radiaaneiksi
+    const fovRadians = (fov / 2) * (Math.PI / 180); // Convert FOV to radians
     const groundWidth = 2 * altitude * Math.tan(fovRadians);
     const newDistance = groundWidth * overlapFactor;
     return newDistance;

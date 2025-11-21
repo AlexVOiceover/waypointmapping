@@ -1,6 +1,6 @@
-﻿using KarttaBackEnd2.Server.Models;
+﻿using WaypointMapping.Server.Models;
 
-namespace KarttaBackEnd2.Server.Data
+namespace WaypointMapping.Server.Data
 {
     public class Waypoint
     {

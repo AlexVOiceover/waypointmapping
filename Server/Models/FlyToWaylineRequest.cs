@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
 
     public class FlyToWaylineRequest

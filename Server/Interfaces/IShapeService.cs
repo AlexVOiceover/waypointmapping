@@ -1,6 +1,6 @@
-using KarttaBackEnd2.Server.Models;
+using WaypointMapping.Server.Models;
 
-namespace KarttaBackEnd2.Server.Interfaces
+namespace WaypointMapping.Server.Interfaces
 {
     /// <summary>
     /// Interface for services that generate waypoints for specific shape types

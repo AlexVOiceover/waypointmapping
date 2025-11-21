@@ -1,11 +1,11 @@
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace KarttaBackEnd2.Server.Services
+namespace WaypointMapping.Server.Services
 {
     /// <summary>
     /// Service for generating waypoints for polyline shapes
@@ -37,10 +37,26 @@ namespace KarttaBackEnd2.Server.Services
         {
             _logger.LogInformation("Generating polyline waypoints with parameters: Altitude={Altitude}, Speed={Speed}, UseEndpointsOnly={UseEndpointsOnly}",
                 parameters.Altitude, parameters.Speed, parameters.UseEndpointsOnly);
-                
-            if (shape == null || shape.Coordinates == null || shape.Coordinates.Count < 2)
+
+            if (shape == null || shape.Coordinates == null || shape.Coordinates.Count < 1)
             {
                 return new List<Waypoint>();
+            }
+
+            // Handle single-point polyline edge case
+            if (shape.Coordinates.Count == 1)
+            {
+                var coord = shape.Coordinates[0];
+                var waypoint = new Waypoint(
+                    parameters.StartingIndex,
+                    coord.Lat,
+                    coord.Lng,
+                    parameters.Altitude > 0 ? parameters.Altitude : 50.0,
+                    parameters.Speed > 0 ? parameters.Speed : 5.0,
+                    parameters.Action ?? "takePhoto"
+                );
+                waypoint.Heading = 0;
+                return new List<Waypoint> { waypoint };
             }
             
             // Validate and set default parameters if needed

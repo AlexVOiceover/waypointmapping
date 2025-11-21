@@ -1,4 +1,4 @@
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
     /// <summary>
     /// Parameter object for waypoint generation to replace long parameter lists

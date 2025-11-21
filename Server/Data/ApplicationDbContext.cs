@@ -1,7 +1,7 @@
-﻿using KarttaBackEnd2.Server.Models;
+﻿using WaypointMapping.Server.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace KarttaBackEnd2.Server.Data
+namespace WaypointMapping.Server.Data
 {
     public class ApplicationDbContext : DbContext
     {

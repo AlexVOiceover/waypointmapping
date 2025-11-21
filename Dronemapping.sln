@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34622.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KarttaBackendTest", "KarttaBackendTest\KarttaBackendTest.csproj", "{01BA4524-106B-4002-85FE-059D107FAC03}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server.Tests", "Server.Tests\Server.Tests.csproj", "{01BA4524-106B-4002-85FE-059D107FAC03}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MappingBackend.Server", "Server\MappingBackend.Server.csproj", "{7D8E45E2-4CA5-4877-9B85-0AFEE837D56B}"
 EndProject

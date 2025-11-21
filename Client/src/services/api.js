@@ -9,33 +9,33 @@ const api = axios.create({
   baseURL: `${apiBaseUrl}/api/`,
 });
 
-// API-kutsu waypointtien generointiin
+// API call for generating waypoints
 export const generateWaypoints = async (request) => {
   try {
-    const response = await api.post('/waypoints/generate', request); 
-    return response.data; // Palauttaa listan generoituja waypointteja
+    const response = await api.post('/waypoints/generate', request);
+    return response.data; // Returns a list of generated waypoints
   }
   catch (error) {
     throw error.response?.data || 'Failed to generate waypoints';
   }
 };
 
-// API-kutsu waypointin päivittämiseen
+// API call for updating a waypoint
 export const updateWaypoint = async (id, updatedWaypoint) => {
   try {
-    const response = await api.put(`/waypoints/${id}`, updatedWaypoint); 
-    return response.data; // Palauttaa päivitetyn waypointin
+    const response = await api.put(`/waypoints/${id}`, updatedWaypoint);
+    return response.data; // Returns the updated waypoint
   }
   catch (error) {
     throw error.response?.data || 'Failed to update waypoint';
   }
 };
 
-// API-kutsu waypointin poistamiseen
+// API call for deleting a waypoint
 export const deleteWaypoint = async (id) => {
   try {
-    const response = await api.delete(`/waypoints/${id}`); 
-    return response.data; // Palauttaa poistettuun waypointtiin liittyvät tiedot
+    const response = await api.delete(`/waypoints/${id}`);
+    return response.data; // Returns data related to the deleted waypoint
   }
   catch (error) {
     throw error.response?.data || 'Failed to delete waypoint';

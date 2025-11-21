@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
     public class ActionGroupModel
     {

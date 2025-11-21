@@ -1,4 +1,4 @@
-﻿namespace KarttaBackEnd2.Server.DTOs
+﻿namespace WaypointMapping.Server.DTOs
 {
     public class WaypointDTO
     {

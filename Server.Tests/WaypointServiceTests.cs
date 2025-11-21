@@ -1,27 +1,27 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using KarttaBackEnd2.Server.Interfaces;
-using KarttaBackEnd2.Server.Models;
-using KarttaBackEnd2.Server.Services;
+using WaypointMapping.Server.Interfaces;
+using WaypointMapping.Server.Models;
+using WaypointMapping.Server.Services;
 
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace KarttaBackendTest
+namespace Server.Tests
 {
-    public class WaypointServiceV2Tests
+    public class WaypointServiceTests
     {
-        private readonly WaypointServiceV2 _waypointServiceV2;
-        private readonly Mock<ILogger<WaypointServiceV2>> _mockLogger;
+        private readonly WaypointService _waypointService;
+        private readonly Mock<ILogger<WaypointService>> _mockLogger;
         private readonly Mock<IShapeService> _mockRectangleShapeService;
         private readonly Mock<IShapeService> _mockCircleShapeService;
         private readonly Mock<IShapeService> _mockPolygonShapeService;
         private readonly Mock<IShapeService> _mockPolylineShapeService;
 
-        public WaypointServiceV2Tests()
+        public WaypointServiceTests()
         {
-            _mockLogger = new Mock<ILogger<WaypointServiceV2>>();
+            _mockLogger = new Mock<ILogger<WaypointService>>();
             
             // Setup shape services
             _mockRectangleShapeService = new Mock<IShapeService>();
@@ -36,15 +36,15 @@ namespace KarttaBackendTest
             _mockPolylineShapeService = new Mock<IShapeService>();
             _mockPolylineShapeService.Setup(s => s.CanHandleShapeType(ShapeTypes.Polyline)).Returns(true);
             
-            var shapeServices = new List<IShapeService> 
-            { 
+            var shapeServices = new List<IShapeService>
+            {
                 _mockRectangleShapeService.Object,
-                _mockCircleShapeService.Object, 
+                _mockCircleShapeService.Object,
                 _mockPolygonShapeService.Object,
                 _mockPolylineShapeService.Object
             };
-            
-            _waypointServiceV2 = new WaypointServiceV2(shapeServices, _mockLogger.Object);
+
+            _waypointService = new WaypointService(shapeServices, _mockLogger.Object);
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace KarttaBackendTest
             )).Returns(expectedWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Equal(expectedWaypoints.Count, result.Count);
@@ -142,7 +142,7 @@ namespace KarttaBackendTest
             )).Returns(expectedWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Equal(expectedWaypoints.Count, result.Count);
@@ -199,7 +199,7 @@ namespace KarttaBackendTest
             )).Returns(expectedWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Equal(expectedWaypoints.Count, result.Count);
@@ -256,7 +256,7 @@ namespace KarttaBackendTest
             )).Returns(expectedWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Equal(expectedWaypoints.Count, result.Count);
@@ -329,7 +329,7 @@ namespace KarttaBackendTest
             )).Returns(circleWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Equal(4, result.Count);
@@ -369,7 +369,7 @@ namespace KarttaBackendTest
             };
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(shapes, parameters);
+            var result = await _waypointService.GenerateWaypointsAsync(shapes, parameters);
 
             // Assert
             Assert.Empty(result);
@@ -400,7 +400,7 @@ namespace KarttaBackendTest
             )).Returns(expectedWaypoints);
 
             // Act
-            var result = await _waypointServiceV2.GenerateWaypointsAsync(
+            var result = await _waypointService.GenerateWaypointsAsync(
                 "takePhoto",
                 0,
                 100,

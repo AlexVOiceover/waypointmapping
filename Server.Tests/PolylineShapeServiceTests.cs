@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using KarttaBackEnd2.Server.Models;
-using KarttaBackEnd2.Server.Services;
-using KarttaBackEnd2.Server.Interfaces;
+using WaypointMapping.Server.Models;
+using WaypointMapping.Server.Services;
+using WaypointMapping.Server.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace KarttaBackendTest
+namespace Server.Tests
 {
     public class PolylineShapeServiceTests
     {
@@ -18,6 +18,20 @@ namespace KarttaBackendTest
         {
             _mockLogger = new Mock<ILogger<PolylineShapeService>>();
             _mockGeometryService = new Mock<IGeometryService>();
+
+            // Setup mock to return realistic distances using Haversine formula
+            _mockGeometryService.Setup(g => g.CalculateDistance(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+                .Returns<double, double, double, double>((lat1, lng1, lat2, lng2) => {
+                    const double earthRadius = 6371000; // meters
+                    double dLat = (lat2 - lat1) * Math.PI / 180.0;
+                    double dLng = (lng2 - lng1) * Math.PI / 180.0;
+                    double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                               Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                               Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+                    double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+                    return earthRadius * c;
+                });
+
             _polylineService = new PolylineShapeService(_mockGeometryService.Object, _mockLogger.Object);
         }
 

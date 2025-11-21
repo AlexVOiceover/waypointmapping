@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace KarttaBackEnd2.Server.Models
+namespace WaypointMapping.Server.Models
 {
     /// <summary>
     /// Represents a coordinate with a circle definition (center point and radius)
