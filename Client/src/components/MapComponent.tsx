@@ -1,10 +1,8 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { GoogleMap, useJsApiLoader, Polyline } from '@react-google-maps/api';
-// @ts-expect-error - JS file without types
 import { validateAndCorrectCoordinates } from '../services/JSFunctions';
 import FlightParametersPanel from './FlightParametersPanel';
 import MapToolbar from './MapToolbar';
-// @ts-expect-error - JSX file without types
 import LocationButton from './LocationButton';
 import { useWaypointAPI } from '../hooks/useWaypointAPI';
 import { MapProvider, useMapContext } from '../context/MapContext';
@@ -230,7 +228,11 @@ const MapInner: React.FC<MapInnerProps> = ({ inputRef, downloadLinkRef, mapInsta
     let validCoordinates: Coordinate[];
     try {
       if (boundsType === "rectangle" || boundsType === "polyline") {
-        validCoordinates = validateAndCorrectCoordinates(bounds);
+        const coords = validateAndCorrectCoordinates(bounds);
+        if (!coords) {
+          throw new Error('Failed to validate coordinates');
+        }
+        validCoordinates = coords;
       } else if (boundsType === "circle") {
         // For circles, use cached center if available
         const windowWithCircle = window as unknown as Window & { lastCircleCenter: CircleCenter };

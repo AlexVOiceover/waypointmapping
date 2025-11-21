@@ -39,7 +39,10 @@ namespace WaypointMapping.Server.Services
             double maxLng = polygonCoordinates.Max(c => c.Lng);
 
             // Convert line spacing to degrees based on latitude
-            double lineSpacingDegrees = _geometryService.MetersToDegrees(parameters.LineSpacing, minLat);
+            double lineSpacingDegrees = _geometryService.MetersToDegrees(
+                parameters.LineSpacing,
+                minLat
+            );
 
             // Determine the direction of the flight lines
             if (parameters.IsNorthSouth)
@@ -47,7 +50,7 @@ namespace WaypointMapping.Server.Services
                 // North-South lines (moving east after each column)
                 int waypointIndex = parameters.StartingIndex;
                 int lineCount = 0;
-                
+
                 for (double lng = minLng; lng <= maxLng; lng += lineSpacingDegrees)
                 {
                     var lineWaypoints = new List<Waypoint>();
@@ -55,16 +58,22 @@ namespace WaypointMapping.Server.Services
                     double startLat = isEvenLine ? minLat : maxLat;
                     double endLat = isEvenLine ? maxLat : minLat;
                     double step = isEvenLine ? lineSpacingDegrees / 10 : -lineSpacingDegrees / 10;
-                    
-                    for (double lat = startLat; isEvenLine ? lat <= endLat : lat >= endLat; lat += step)
+
+                    for (
+                        double lat = startLat;
+                        isEvenLine ? lat <= endLat : lat >= endLat;
+                        lat += step
+                    )
                     {
                         // Only add waypoints that are inside the polygon
                         if (_geometryService.IsPointInPolygon(polygonCoordinates, lat, lng))
                         {
-                            lineWaypoints.Add(CreateWaypoint(waypointIndex++, lat, lng, parameters));
+                            lineWaypoints.Add(
+                                CreateWaypoint(waypointIndex++, lat, lng, parameters)
+                            );
                         }
                     }
-                    
+
                     // Only add if we have waypoints in this line
                     if (lineWaypoints.Count > 0)
                     {
@@ -78,7 +87,7 @@ namespace WaypointMapping.Server.Services
                 // East-West lines (moving north after each row)
                 int waypointIndex = parameters.StartingIndex;
                 int lineCount = 0;
-                
+
                 for (double lat = minLat; lat <= maxLat; lat += lineSpacingDegrees)
                 {
                     var lineWaypoints = new List<Waypoint>();
@@ -86,16 +95,22 @@ namespace WaypointMapping.Server.Services
                     double startLng = isEvenLine ? minLng : maxLng;
                     double endLng = isEvenLine ? maxLng : minLng;
                     double step = isEvenLine ? lineSpacingDegrees / 10 : -lineSpacingDegrees / 10;
-                    
-                    for (double lng = startLng; isEvenLine ? lng <= endLng : lng >= endLng; lng += step)
+
+                    for (
+                        double lng = startLng;
+                        isEvenLine ? lng <= endLng : lng >= endLng;
+                        lng += step
+                    )
                     {
                         // Only add waypoints that are inside the polygon
                         if (_geometryService.IsPointInPolygon(polygonCoordinates, lat, lng))
                         {
-                            lineWaypoints.Add(CreateWaypoint(waypointIndex++, lat, lng, parameters));
+                            lineWaypoints.Add(
+                                CreateWaypoint(waypointIndex++, lat, lng, parameters)
+                            );
                         }
                     }
-                    
+
                     // Only add if we have waypoints in this line
                     if (lineWaypoints.Count > 0)
                     {
@@ -108,24 +123,22 @@ namespace WaypointMapping.Server.Services
             return waypoints;
         }
 
-        private Waypoint CreateWaypoint(int index, double lat, double lng, WaypointParameters parameters)
+        private Waypoint CreateWaypoint(
+            int index,
+            double lat,
+            double lng,
+            WaypointParameters parameters
+        )
         {
             string action = parameters.Action;
-            
+
             // Handle photo interval if specified
             if (parameters.PhotoInterval > 0 && index % parameters.PhotoInterval == 0)
             {
                 action = WaypointActions.TakePhoto;
             }
-            
-            return new Waypoint(
-                index,
-                lat,
-                lng,
-                parameters.Altitude,
-                parameters.Speed,
-                action
-            );
+
+            return new Waypoint(index, lat, lng, parameters.Altitude, parameters.Speed, action);
         }
     }
-} 
+}

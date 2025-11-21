@@ -92,6 +92,7 @@ interface WaypointPoint {
   gimbalAngle?: number;
   Action?: string;
   action?: string;
+  terrainElevation?: number | null;
 }
 
 interface ExtendedMarker extends google.maps.Marker {
@@ -103,6 +104,7 @@ interface ExtendedMarker extends google.maps.Marker {
   angle: number;
   action: string;
   id: number;
+  terrainElevation?: number | null;
 }
 
 interface KMLRequestData {
@@ -150,7 +152,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
   /**
    * Generate waypoints from server
    */
-  const generateWaypointsFromAPI = useCallback(async (requestData: WaypointRequestData): Promise<WaypointPoint[]> => {
+  const generateWaypointsFromAPI = useCallback(async (requestData: WaypointRequestData): Promise<WaypointPoint[] | never> => {
     try {
       // Clone the request data to ensure we have a clean object without circular references
       const cleanRequest: CleanRequestData = {
@@ -221,8 +223,8 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         console.error('CRITICAL ERROR: Circle center is at (0,0) in final request.');
 
         // Try to use the global cache if available
-        if ((window as any).lastCircleCenter) {
-          const cached = (window as any).lastCircleCenter;
+        if (window.lastCircleCenter) {
+          const cached = window.lastCircleCenter;
           cleanRequest.Bounds[0].Lat = cached.lat;
           cleanRequest.Bounds[0].Lng = cached.lng;
           cleanRequest.Bounds[0].radius = cached.radius;
@@ -237,7 +239,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
 
       // Generate waypoints with clean data
       console.log('Generating waypoints with request:', cleanRequest);
-      const generatedPoints = await generateWaypoints(cleanRequest);
+      const generatedPoints = await generateWaypoints(cleanRequest) as WaypointPoint[];
 
       console.log('Waypoints generated:', generatedPoints);
       if (!generatedPoints || generatedPoints.length === 0) {
@@ -245,21 +247,21 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       }
 
       // Clear previous waypoints before adding new ones
-      if (mapRef.current && (mapRef.current as any).flags) {
+      if (mapRef.current && mapRef.current.flags) {
         // Remove existing markers
-        for (let i = 0; i < (mapRef.current as any).flags.length; i++) {
-          (mapRef.current as any).flags[i].setMap(null);
+        for (let i = 0; i < mapRef.current.flags.length; i++) {
+          mapRef.current.flags[i].setMap(null);
         }
-        (mapRef.current as any).flags = [];
+        mapRef.current.flags = [];
       }
 
       // Clear previous flight paths
-      if (mapRef.current && (mapRef.current as any).lines) {
+      if (mapRef.current && mapRef.current.lines) {
         // Remove existing polylines
-        for (let i = 0; i < (mapRef.current as any).lines.length; i++) {
-          (mapRef.current as any).lines[i].setMap(null);
+        for (let i = 0; i < mapRef.current.lines.length; i++) {
+          mapRef.current.lines[i].setMap(null);
         }
-        (mapRef.current as any).lines = [];
+        mapRef.current.lines = [];
       }
 
       const flightPoints: google.maps.LatLngLiteral[] = [];
@@ -272,7 +274,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       if (flightParams.accountForTerrain && mapRef.current) {
         try {
           const elevationService = new google.maps.ElevationService();
-          const locations = generatedPoints.map((point: any) => {
+          const locations = generatedPoints.map((point: WaypointPoint) => {
             const latitude = point.Lat !== undefined ? point.Lat :
                             (point.lat !== undefined ? point.lat :
                             (point.Latitude !== undefined ? point.Latitude :
@@ -313,18 +315,19 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
               const elevationDifference = terrainElevation - baseElevation;
 
               // Get current altitude
-              const currentAltitude = generatedPoints[i].Alt !== undefined ? generatedPoints[i].Alt :
-                                     (generatedPoints[i].alt !== undefined ? generatedPoints[i].alt :
-                                     (generatedPoints[i].Altitude !== undefined ? generatedPoints[i].Altitude :
-                                     (generatedPoints[i].altitude !== undefined ? generatedPoints[i].altitude : 60)));
+              const point = generatedPoints[i];
+              const currentAltitude = point.Alt !== undefined ? point.Alt :
+                                     (point.alt !== undefined ? point.alt :
+                                     (point.Altitude !== undefined ? point.Altitude :
+                                     (point.altitude !== undefined ? point.altitude : 60)));
 
               // Adjust altitude by the elevation difference
-              generatedPoints[i].altitude = currentAltitude + elevationDifference;
+              point.altitude = currentAltitude + elevationDifference;
 
               // Store the terrain elevation for reference
-              generatedPoints[i].terrainElevation = terrainElevation;
+              point.terrainElevation = terrainElevation;
 
-              console.log(`Waypoint ${i}: base=${currentAltitude}m, terrain_diff=${elevationDifference.toFixed(2)}m, adjusted=${generatedPoints[i].altitude.toFixed(2)}m, terrain_elev=${terrainElevation.toFixed(2)}m`);
+              console.log(`Waypoint ${i}: base=${currentAltitude}m, terrain_diff=${elevationDifference.toFixed(2)}m, adjusted=${(point.altitude || 0).toFixed(2)}m, terrain_elev=${terrainElevation.toFixed(2)}m`);
             }
           }
         } catch (error) {
@@ -414,11 +417,11 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         genWaypointMarker.lng = longitude;
         genWaypointMarker.lat = latitude;
         genWaypointMarker.altitude = altitude;
-        genWaypointMarker.speed = point.Speed || point.speed || 2.5;
-        genWaypointMarker.heading = point.Heading || point.heading || 0;
-        genWaypointMarker.angle = point.GimbalAngle || point.gimbalAngle || -45;
-        genWaypointMarker.action = point.Action || point.action || flightParams.allPointsAction || 'noAction';
-        genWaypointMarker.terrainElevation = point.terrainElevation || null;
+        genWaypointMarker.speed = (point.Speed !== undefined ? point.Speed : (point.speed !== undefined ? point.speed : 2.5));
+        genWaypointMarker.heading = (point.Heading !== undefined ? point.Heading : (point.heading !== undefined ? point.heading : 0));
+        genWaypointMarker.angle = (point.GimbalAngle !== undefined ? point.GimbalAngle : (point.gimbalAngle !== undefined ? point.gimbalAngle : -45));
+        genWaypointMarker.action = (point.Action !== undefined ? point.Action : (point.action !== undefined ? point.action : (flightParams.allPointsAction || 'noAction')));
+        genWaypointMarker.terrainElevation = (point.terrainElevation !== undefined ? point.terrainElevation : null);
 
         // Add event listeners to the marker
         google.maps.event.addListener(genWaypointMarker, "click", function (this: ExtendedMarker) {
@@ -428,20 +431,20 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
             genInfoWindowRef.current.open(this.getMap(), this);
 
             // Setup navigation buttons when info window is ready
-            const allMarkers = (mapRef.current as any)?.flags || [];
+            const allMarkers = mapRef.current?.flags || [];
             const currentWaypointId = this.id;
-            const currentIndex = allMarkers.findIndex((m: any) => m.id === currentWaypointId);
+            const currentIndex = allMarkers.findIndex((m: ExtendedMarker) => m.id === currentWaypointId);
 
             console.log('Info window opened for waypoint', currentWaypointId, 'at index', currentIndex, 'of', allMarkers.length);
 
             // Listen for domready event on info window
-            const domreadyListener = google.maps.event.addListenerOnce(genInfoWindowRef.current, 'domready', () => {
+            google.maps.event.addListenerOnce(genInfoWindowRef.current, 'domready', () => {
               console.log('Info window DOM ready, attaching button listeners');
 
               // Populate terrain elevation if available
               const terrainElevationDiv = document.getElementById("waypointTerrainElevation");
               if (terrainElevationDiv) {
-                const currentMarker = allMarkers.find((m: any) => m.id === currentWaypointId);
+                const currentMarker = allMarkers.find((m: ExtendedMarker) => m.id === currentWaypointId);
                 if (currentMarker && currentMarker.terrainElevation !== null && currentMarker.terrainElevation !== undefined) {
                   terrainElevationDiv.textContent = `${currentMarker.terrainElevation.toFixed(2)}`;
                 } else {
@@ -523,7 +526,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
 
                   if (altInput && speedInput && angleInput && actionInput) {
                     // Update the marker's properties
-                    const currentMarker = allMarkers.find((m: any) => m.id === currentWaypointId);
+                    const currentMarker = allMarkers.find((m: ExtendedMarker) => m.id === currentWaypointId);
                     if (currentMarker) {
                       currentMarker.altitude = parseFloat(altInput.value) || currentMarker.altitude;
                       currentMarker.speed = parseFloat(speedInput.value) || currentMarker.speed;
@@ -567,7 +570,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
                   console.log('Delete clicked for waypoint:', currentWaypointId);
 
                   // Find and remove the marker
-                  const markerIndex = allMarkers.findIndex((m: any) => m.id === currentWaypointId);
+                  const markerIndex = allMarkers.findIndex((m: ExtendedMarker) => m.id === currentWaypointId);
                   if (markerIndex > -1) {
                     const markerToRemove = allMarkers[markerIndex];
                     markerToRemove.setMap(null);
@@ -633,18 +636,18 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
 
         // Add the marker to the map's flags array
         if (mapRef.current) {
-          if (!(mapRef.current as any).flags) {
-            (mapRef.current as any).flags = [];
+          if (!mapRef.current.flags) {
+            mapRef.current.flags = [];
           }
-          (mapRef.current as any).flags.push(genWaypointMarker);
-          console.log('Marker stored. Total markers:', (mapRef.current as any).flags.length);
+          mapRef.current.flags.push(genWaypointMarker);
+          console.log('Marker stored. Total markers:', mapRef.current.flags.length);
         } else {
           console.error('mapRef.current is null - marker not added to map!');
         }
         flightPoints.push({ lat: latitude, lng: longitude });
       }
 
-      console.log('Total waypoints created:', (mapRef.current as any)?.flags?.length || 0);
+      console.log('Total waypoints created:', mapRef.current?.flags?.length || 0);
 
       // Create a polyline connecting all waypoints
       const flightPath = new google.maps.Polyline({
@@ -661,10 +664,10 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
         flightPath.setMap(mapRef.current);
 
         // Store the polyline in the map's lines array
-        if (!(mapRef.current as any).lines) {
-          (mapRef.current as any).lines = [];
+        if (!mapRef.current.lines) {
+          mapRef.current.lines = [];
         }
-        (mapRef.current as any).lines.push(flightPath);
+        mapRef.current.lines.push(flightPath);
       }
 
       try {
@@ -680,20 +683,26 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       redrawFlightPaths();
 
       return generatedPoints;
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error generating waypoints:', error);
 
       // Log more detailed error information
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        throw error.response.data || 'Server error generating waypoints';
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        throw new Error('No response from server. Please check your connection.');
-      } else {
+      if (axios.isAxiosError(error)) {
+        console.error('Response data:', error.response?.data);
+        console.error('Response status:', error.response?.status);
+        if (error.response) {
+          throw error.response.data || 'Server error generating waypoints';
+        } else if (error.request) {
+          console.error('No response received:', error.request);
+          throw new Error('No response from server. Please check your connection.');
+        } else {
+          throw new Error('Error setting up the request');
+        }
+      } else if (error instanceof Error) {
         console.error('Error message:', error.message);
         throw error;
+      } else {
+        throw 'Unknown error generating waypoints';
       }
     }
   }, [mapRef, genInfoWindowRef, redrawFlightPaths]);
@@ -702,7 +711,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
    * Generate KML file for waypoints
    */
   const generateKml = useCallback(async (downloadLinkRef: React.RefObject<HTMLAnchorElement>): Promise<void> => {
-    if (!mapRef.current || !(mapRef.current as any).flags || (mapRef.current as any).flags.length === 0) {
+    if (!mapRef.current || !mapRef.current.flags || mapRef.current.flags.length === 0) {
       alert('No waypoints to export');
       return;
     }
@@ -723,7 +732,7 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
     };
 
     // Clean waypoints data to avoid circular references
-    requestData.Waypoints = (mapRef.current as any).flags.map((wp: ExtendedMarker, index: number) => {
+    requestData.Waypoints = mapRef.current.flags.map((wp: ExtendedMarker, index: number) => {
       return {
         Index: index,
         Latitude: Number(wp.lat || 0),

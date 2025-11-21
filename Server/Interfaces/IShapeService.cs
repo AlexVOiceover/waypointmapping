@@ -13,7 +13,7 @@ namespace WaypointMapping.Server.Interfaces
         /// <param name="shapeType">The shape type to check</param>
         /// <returns>True if this service can handle the shape type, false otherwise</returns>
         bool CanHandleShapeType(string shapeType);
-        
+
         /// <summary>
         /// Generates waypoints for a specific shape
         /// </summary>
@@ -22,4 +22,4 @@ namespace WaypointMapping.Server.Interfaces
         /// <returns>A list of waypoints for the shape</returns>
         List<Waypoint> GenerateWaypoints(ShapeData shape, WaypointParameters parameters);
     }
-} 
+}

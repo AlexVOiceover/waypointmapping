@@ -8,6 +8,6 @@
         public double Speed { get; set; }
         public double Heading { get; set; }
         public double GimbalAngle { get; set; }
-        public string Action { get; set; }
+        public string Action { get; set; } = "takePhoto";
     }
 }

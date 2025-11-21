@@ -1,16 +1,21 @@
 import { fileURLToPath, URL } from 'node:url';
+
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import child_process from 'child_process';
 import { env } from 'process';
-var baseFolder = env.APPDATA !== undefined && env.APPDATA !== ''
-    ? "".concat(env.APPDATA, "/ASP.NET/https")
-    : "".concat(env.HOME, "/.aspnet/https");
-var certificateName = "waypointmapping-client";
-var certFilePath = path.join(baseFolder, "".concat(certificateName, ".pem"));
-var keyFilePath = path.join(baseFolder, "".concat(certificateName, ".key"));
+
+const baseFolder =
+    env.APPDATA !== undefined && env.APPDATA !== ''
+        ? `${env.APPDATA}/ASP.NET/https`
+        : `${env.HOME}/.aspnet/https`;
+
+const certificateName = "waypointmapping-client";
+const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
+const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
+
 if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
     if (0 !== child_process.spawnSync('dotnet', [
         'dev-certs',
@@ -24,8 +29,10 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
         throw new Error("Could not create certificate.");
     }
 }
-var target = env.ASPNETCORE_HTTPS_PORT ? "https://localhost:".concat(env.ASPNETCORE_HTTPS_PORT) :
+
+const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
     env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7146';
+
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [plugin()],
@@ -37,7 +44,7 @@ export default defineConfig({
     server: {
         proxy: {
             '^/weatherforecast': {
-                target: target,
+                target,
                 secure: false
             }
         },
@@ -47,4 +54,4 @@ export default defineConfig({
             cert: fs.readFileSync(certFilePath),
         }
     }
-});
+})

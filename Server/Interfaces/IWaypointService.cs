@@ -23,7 +23,8 @@ namespace WaypointMapping.Server.Interfaces
             int in_startingIndex,
             double photoInterval = 3,
             bool useEndpointsOnly = false,
-            bool isNorthSouth = false);
+            bool isNorthSouth = false
+        );
 
         /// <summary>
         /// Generates waypoints based on the provided shapes and parameters
@@ -31,6 +32,9 @@ namespace WaypointMapping.Server.Interfaces
         /// <param name="shapes">List of shapes to process</param>
         /// <param name="parameters">Parameters for waypoint generation</param>
         /// <returns>List of generated waypoints</returns>
-        Task<List<Waypoint>> GenerateWaypointsAsync(List<ShapeData> shapes, WaypointParameters parameters);
+        Task<List<Waypoint>> GenerateWaypointsAsync(
+            List<ShapeData> shapes,
+            WaypointParameters parameters
+        );
     }
 }

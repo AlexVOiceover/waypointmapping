@@ -2,7 +2,7 @@
 {
     internal class DataElement : SharpKml.Dom.Data
     {
-        public string Name { get; set; }
-        public string Value { get; set; }
+        public new string Name { get; set; } = string.Empty;
+        public new string Value { get; set; } = string.Empty;
     }
 }

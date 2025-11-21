@@ -1,7 +1,6 @@
-﻿using WaypointMapping.Server.Interfaces;
+﻿using Microsoft.AspNetCore.Mvc;
+using WaypointMapping.Server.Interfaces;
 using WaypointMapping.Server.Models;
-using WaypointMapping.Server.Services;
-using Microsoft.AspNetCore.Mvc;
 
 namespace WaypointMapping.Server.Controllers
 {
@@ -9,8 +8,7 @@ namespace WaypointMapping.Server.Controllers
     [Route("api/[controller]")]
     public class KMZController : ControllerBase
     {
-        private readonly 
-            IKMZService _kmzService;
+        private readonly IKMZService _kmzService;
 
         public KMZController(IKMZService kmzService)
         {

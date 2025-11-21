@@ -11,14 +11,14 @@ namespace WaypointMapping.Server.Models
         /// Gets or sets the unique identifier of the shape
         /// </summary>
         [JsonProperty("id")]
-        public string Id { get; set; }
-        
+        public string Id { get; set; } = "1";
+
         /// <summary>
         /// Gets or sets the type of shape (rectangle, circle, polygon, polyline)
         /// </summary>
         [JsonProperty("type")]
-        public string Type { get; set; }
-        
+        public string Type { get; set; } = string.Empty;
+
         /// <summary>
         /// Gets or sets the coordinates that define the shape
         /// For rectangles: 2 points (top-left and bottom-right corners)
@@ -28,7 +28,7 @@ namespace WaypointMapping.Server.Models
         /// </summary>
         [JsonProperty("coordinates")]
         public List<Coordinate> Coordinates { get; set; } = new List<Coordinate>();
-        
+
         /// <summary>
         /// Gets or sets the radius of a circle shape (in meters)
         /// Only used for circle shapes
@@ -36,4 +36,4 @@ namespace WaypointMapping.Server.Models
         [JsonProperty("radius")]
         public double Radius { get; set; }
     }
-} 
+}

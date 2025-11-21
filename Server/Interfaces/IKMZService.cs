@@ -6,5 +6,4 @@ namespace WaypointMapping.Server.Interfaces
     {
         Task<byte[]> GenerateKmzAsync(FlyToWaylineRequest request);
     }
-
 }

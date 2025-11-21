@@ -2,6 +2,8 @@ Altitude
 
 clean gitignores
 
+check proper types, no "any"
+
 legacy code, v2 what it does?
 
 Drone dropdown

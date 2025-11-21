@@ -1,6 +1,8 @@
-// JSFunctions.js
+// JSFunctions.ts
 
-export const calculateDistanceBetweenPaths = (altitude, overlap, fov) => {
+import { Coordinate } from './WaypointService';
+
+export const calculateDistanceBetweenPaths = (altitude: number, overlap: number, fov: number): number => {
     const overlapFactor = (1 - overlap / 100);
     const fovRadians = (fov / 2) * (Math.PI / 180); // Convert FOV to radians
     const groundWidth = 2 * altitude * Math.tan(fovRadians);
@@ -8,7 +10,7 @@ export const calculateDistanceBetweenPaths = (altitude, overlap, fov) => {
     return newDistance;
 };
 
-export const calculateSpeed = (altitude, overlap, focalLength, sensorHeight, photoInterval) => {
+export const calculateSpeed = (altitude: number, overlap: number, focalLength: number, sensorHeight: number, photoInterval: number): number => {
     const overlapFactor = (1 - overlap / 100);
     const vfovRadians = 2 * Math.atan(sensorHeight / (2 * focalLength));
     const groundHeight = 2 * altitude * Math.tan(vfovRadians / 2);
@@ -16,16 +18,16 @@ export const calculateSpeed = (altitude, overlap, focalLength, sensorHeight, pho
     return speed;
 };
 
-export const validateAndCorrectCoordinates = (coordinatesString) => {
+export const validateAndCorrectCoordinates = (coordinatesString: string): Coordinate[] | null => {
     try {
         if (!coordinatesString || typeof coordinatesString !== 'string') {
             console.error("Invalid coordinates string:", coordinatesString);
             return null;
         }
-        
+
         // Split the string by semicolon to get individual coordinate pairs
         const coordinatePairs = coordinatesString.split(';');
-        
+
         if (coordinatePairs.length < 2) {
             console.error("Not enough coordinate pairs:", coordinatesString);
             return null;
@@ -35,7 +37,7 @@ export const validateAndCorrectCoordinates = (coordinatesString) => {
         const coordinatesArray = coordinatePairs.map(pair => {
             // Clean up extra spaces
             const trimmedPair = pair.trim();
-            
+
             // Split by comma
             const [lat, lng] = trimmedPair.split(',').map(val => {
                 // Clean and parse as number
@@ -46,20 +48,20 @@ export const validateAndCorrectCoordinates = (coordinatesString) => {
                 }
                 return parsed;
             });
-            
+
             // Validate latitude and longitude ranges
             if (lat < -90 || lat > 90) {
                 throw new Error(`Latitude out of range: ${lat}`);
             }
-            
+
             if (lng < -180 || lng > 180) {
                 throw new Error(`Longitude out of range: ${lng}`);
             }
-            
+
             // Return in the format expected by the API
             return { Lat: lat, Lng: lng };
         });
-        
+
         console.log("Validated coordinates:", coordinatesArray);
         return coordinatesArray;
     } catch (error) {
@@ -68,7 +70,7 @@ export const validateAndCorrectCoordinates = (coordinatesString) => {
     }
 };
 
-export const measure = (lat1, lon1, lat2, lon2) => {
+export const measure = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6378.137; // Radius of earth in KM
     const dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
     const dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
@@ -80,7 +82,17 @@ export const measure = (lat1, lon1, lat2, lon2) => {
     return d * 1000; // Distance in meters
 };
 
-export const GenerateWaypointInfoboxText = (waypointMarker) => {
+interface WaypointMarker {
+    id: number;
+    lat: number;
+    lng: number;
+    altitude: number;
+    speed: number;
+    angle: number;
+    action: string;
+}
+
+export const GenerateWaypointInfoboxText = (waypointMarker: WaypointMarker): string => {
     let select = '';
     if (waypointMarker.action == "noAction") {
         select = '<option value="takePhoto">Take Picture</option><option selected value="noAction">No Action</option><option value="startRecord">Start Recording</option><option value="stopRecord">Stop Recording</option>';
@@ -256,7 +268,7 @@ export const GenerateWaypointInfoboxText = (waypointMarker) => {
 
 };
 
-export const GenerateShapeInfoboxText = () => {
+export const GenerateShapeInfoboxText = (): string => {
     return `<div class="text-center"><h4>Generate Waypoints For Shape?</h4>
     <button class="btn btn-success" onclick="submitFormFetch()">Generate</button><span>   </span>
     <button class="btn btn-danger" onclick="ShapeEditiorRemove()">Remove</button></div>`;

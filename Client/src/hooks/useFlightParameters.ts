@@ -121,11 +121,11 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
       interval: photoInterval
     });
 
-    setInDistance(params.inDistance);
+    setInDistance(parseFloat(params.inDistance));
 
     // Only update speed if the user hasn't manually changed it
     if (!initialState.manualSpeedSet) {
-      setSpeed(params.speed);
+      setSpeed(parseFloat(params.speed));
     }
   }, [altitude, overlap, focalLength, sensorWidth, sensorHeight, photoInterval, initialState.manualSpeedSet]);
 

@@ -1,22 +1,16 @@
-using WaypointMapping.Server.Data;
 using WaypointMapping.Server.Interfaces;
-using WaypointMapping.Server.Models;
 using WaypointMapping.Server.Services;
-using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
 namespace WaypointMapping.Server
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-            // Register dependencies for both implementations
+            // Register dependencies
             RegisterServices(builder.Services);
 
             var cultureInfo = new CultureInfo("en-US");

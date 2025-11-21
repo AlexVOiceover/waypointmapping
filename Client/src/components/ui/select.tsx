@@ -17,7 +17,10 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, children, value, onChange, onValueChange, ...props }, ref) => {
     // Check if children contain SelectTrigger (wrapper pattern) or direct options (direct pattern)
     const hasSelectTrigger = React.Children.toArray(children).some(
-      child => React.isValidElement(child) && (child.type as any)?.displayName === 'SelectTrigger'
+      child => React.isValidElement(child) &&
+        typeof child.type === 'function' &&
+        'displayName' in child.type &&
+        child.type.displayName === 'SelectTrigger'
     );
 
     // Handler that supports both onChange and onValueChange
@@ -82,7 +85,7 @@ const SelectTrigger = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
 SelectTrigger.displayName = "SelectTrigger"
 
 // SelectValue - placeholder component, not used in native select
-const SelectValue = ({ placeholder }: { placeholder?: string }) => {
+const SelectValue = () => {
   return null // Native select handles placeholder via option
 }
 SelectValue.displayName = "SelectValue"

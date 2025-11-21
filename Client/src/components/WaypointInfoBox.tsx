@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
@@ -11,8 +10,34 @@ import { WaypointActions, ACTION_OPTIONS, ACTION_ICONS, ACTION_BADGE_COLORS } fr
 // Re-export for backward compatibility
 export { WaypointActions };
 
-const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
-    const [formData, setFormData] = useState({
+interface Waypoint {
+  id: string | number;
+  lat: number;
+  lng: number;
+  altitude: number;
+  speed: number;
+  angle: number;
+  heading: number;
+  action: string;
+  isVertex?: boolean;
+}
+
+interface WaypointFormData {
+  altitude: number;
+  speed: number;
+  angle: number;
+  heading: number;
+  action: string;
+}
+
+interface WaypointInfoBoxProps {
+  waypoint: Waypoint;
+  onSave: (data: { id: string | number } & WaypointFormData) => void;
+  onRemove: (id: string | number) => void;
+}
+
+const WaypointInfoBox: React.FC<WaypointInfoBoxProps> = ({ waypoint, onSave, onRemove }) => {
+    const [formData, setFormData] = useState<WaypointFormData>({
         altitude: waypoint.altitude,
         speed: waypoint.speed,
         angle: waypoint.angle,
@@ -21,7 +46,7 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
     });
 
     // Handle form input changes
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
         setFormData({
             ...formData,
@@ -40,14 +65,14 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
     };
 
     // Add a function to calculate distance to the next waypoint
-    const calculateDistanceToNextWaypoint = () => {
+    const calculateDistanceToNextWaypoint = (): string => {
         // This would normally come from props or context
         // For now, we'll just indicate it's not available
         return 'N/A';
     };
 
     // Add a function to format lat/lng for better readability
-    const formatCoordinate = (coord) => {
+    const formatCoordinate = (coord: number): string => {
         return coord.toFixed(6);
     };
 
@@ -60,7 +85,7 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
 
             {/* Add heading visualization */}
             <div className="flex items-center mb-3">
-                <div 
+                <div
                     className="text-2xl transition-transform"
                     style={{ transform: `rotate(${formData.heading}deg)` }}
                     title={`Heading: ${formData.heading}°`}
@@ -69,7 +94,7 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
                 </div>
                 <div className="ml-2">
                     <small className="text-sm text-gray-500">
-                        Heading: {formData.heading}° | 
+                        Heading: {formData.heading}° |
                         Distance to next: {calculateDistanceToNextWaypoint()}
                     </small>
                 </div>
@@ -136,9 +161,9 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
                             ))}
                         </Select>
                         <div>
-                            {ACTION_ICONS[formData.action] && (
-                                <span className={cn(badgeStyles.base, badgeStyles[ACTION_BADGE_COLORS[formData.action]])}>
-                                    {ACTION_ICONS[formData.action]}
+                            {ACTION_ICONS[formData.action as keyof typeof ACTION_ICONS] && (
+                                <span className={cn(badgeStyles.base, badgeStyles[ACTION_BADGE_COLORS[formData.action as keyof typeof ACTION_BADGE_COLORS]])}>
+                                    {ACTION_ICONS[formData.action as keyof typeof ACTION_ICONS]}
                                 </span>
                             )}
                         </div>
@@ -163,23 +188,6 @@ const WaypointInfoBox = ({ waypoint, onSave, onRemove }) => {
             </div>
         </div>
     );
-};
-
-// Add PropTypes for better type checking
-WaypointInfoBox.propTypes = {
-    waypoint: PropTypes.shape({
-        id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-        lat: PropTypes.number.isRequired,
-        lng: PropTypes.number.isRequired,
-        altitude: PropTypes.number.isRequired,
-        speed: PropTypes.number.isRequired,
-        angle: PropTypes.number.isRequired,
-        heading: PropTypes.number.isRequired,
-        action: PropTypes.string.isRequired,
-        isVertex: PropTypes.bool
-    }).isRequired,
-    onSave: PropTypes.func.isRequired,
-    onRemove: PropTypes.func.isRequired
 };
 
 export default WaypointInfoBox;

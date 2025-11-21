@@ -1,7 +1,12 @@
 import { useCallback } from 'react';
-import PropTypes from 'prop-types';
 
-const LocationButton = ({ map, setLatitude, setLongitude }) => {
+interface LocationButtonProps {
+  map: google.maps.Map | null;
+  setLatitude?: (value: string) => void;
+  setLongitude?: (value: string) => void;
+}
+
+const LocationButton: React.FC<LocationButtonProps> = ({ map, setLatitude, setLongitude }) => {
   const handleCenterLocation = useCallback(() => {
     if (!map) return;
 
@@ -61,12 +66,6 @@ const LocationButton = ({ map, setLatitude, setLongitude }) => {
       </svg>
     </button>
   );
-};
-
-LocationButton.propTypes = {
-  map: PropTypes.object,
-  setLatitude: PropTypes.func,
-  setLongitude: PropTypes.func,
 };
 
 export default LocationButton;

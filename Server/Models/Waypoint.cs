@@ -41,7 +41,7 @@ namespace WaypointMapping.Server.Models
         /// Gets or sets the action to perform at this waypoint (e.g., take photo, start recording, etc.)
         /// </summary>
         [JsonProperty("action")]
-        public string Action { get; set; }
+        public string Action { get; set; } = "takePhoto";
 
         /// <summary>
         /// Gets or sets the heading in degrees (0-360)

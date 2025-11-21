@@ -7,8 +7,8 @@ namespace WaypointMapping.Server.Models
         public int ActionGroupId { get; set; }
         public int ActionGroupStartIndex { get; set; }
         public int ActionGroupEndIndex { get; set; }
-        public string ActionGroupMode { get; set; }
-        public string ActionTriggerType { get; set; }
-        public ActionModel Action { get; set; }
+        public string ActionGroupMode { get; set; } = string.Empty;
+        public string ActionTriggerType { get; set; } = string.Empty;
+        public ActionModel Action { get; set; } = new ActionModel();
     }
 }

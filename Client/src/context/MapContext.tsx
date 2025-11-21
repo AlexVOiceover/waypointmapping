@@ -87,19 +87,19 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     setBoundsType('');
 
     // Remove all markers from the map
-    if (mapRef.current && (mapRef.current as any).flags) {
-      (mapRef.current as any).flags.forEach((marker: google.maps.Marker) => {
+    if (mapRef.current?.flags) {
+      mapRef.current.flags.forEach((marker: google.maps.Marker) => {
         marker.setMap(null);
       });
-      (mapRef.current as any).flags = [];
+      mapRef.current.flags = [];
     }
 
     // Remove all routes (polylines) from the map
-    if (mapRef.current && (mapRef.current as any).lines) {
-      (mapRef.current as any).lines.forEach((line: google.maps.Polyline) => {
+    if (mapRef.current?.lines) {
+      mapRef.current.lines.forEach((line: google.maps.Polyline) => {
         line.setMap(null);
       });
-      (mapRef.current as any).lines = [];
+      mapRef.current.lines = [];
     }
 
     // Clear waypoints state
@@ -109,19 +109,19 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
   // Clear only waypoints (not shapes/drawings)
   const clearWaypoints = () => {
     // Remove all markers from the map
-    if (mapRef.current && (mapRef.current as any).flags) {
-      (mapRef.current as any).flags.forEach((marker: google.maps.Marker) => {
+    if (mapRef.current?.flags) {
+      mapRef.current.flags.forEach((marker: google.maps.Marker) => {
         marker.setMap(null);
       });
-      (mapRef.current as any).flags = [];
+      mapRef.current.flags = [];
     }
 
     // Remove all routes (polylines) from the map
-    if (mapRef.current && (mapRef.current as any).lines) {
-      (mapRef.current as any).lines.forEach((line: google.maps.Polyline) => {
+    if (mapRef.current?.lines) {
+      mapRef.current.lines.forEach((line: google.maps.Polyline) => {
         line.setMap(null);
       });
-      (mapRef.current as any).lines = [];
+      mapRef.current.lines = [];
     }
 
     // Clear waypoints state
@@ -133,16 +133,16 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     if (!mapRef.current) return;
 
     // Clear existing flight paths
-    if ((mapRef.current as any).lines) {
-      (mapRef.current as any).lines.forEach((line: google.maps.Polyline) => line.setMap(null));
-      (mapRef.current as any).lines = [];
+    if (mapRef.current.lines) {
+      mapRef.current.lines.forEach((line: google.maps.Polyline) => line.setMap(null));
+      mapRef.current.lines = [];
     }
 
     // Redraw flight paths based on current markers
-    const flags = (mapRef.current as any).flags;
+    const flags = mapRef.current.flags;
     if (!flags || flags.length === 0) return;
 
-    const flightPoints = flags.map((marker: any) => ({
+    const flightPoints = flags.map((marker: ExtendedMarker) => ({
       lat: marker.lat,
       lng: marker.lng
     }));
@@ -157,10 +157,10 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
     });
 
     flightPath.setMap(mapRef.current);
-    if (!(mapRef.current as any).lines) {
-      (mapRef.current as any).lines = [];
+    if (!mapRef.current.lines) {
+      mapRef.current.lines = [];
     }
-    (mapRef.current as any).lines.push(flightPath);
+    mapRef.current.lines.push(flightPath);
   };
 
   // Update marker icon
@@ -183,8 +183,8 @@ export const MapProvider: React.FC<MapProviderProps> = ({ children }) => {
 
   // Redraw markers
   const redrawMarkers = () => {
-    if (mapRef.current && (mapRef.current as any).flags) {
-      (mapRef.current as any).flags.forEach((waypoint: Waypoint) => {
+    if (mapRef.current && mapRef.current.flags) {
+      mapRef.current.flags.forEach((waypoint: Waypoint) => {
         if (waypoint.marker) {
           waypoint.marker.setLabel(`${waypoint.id}`);
         }

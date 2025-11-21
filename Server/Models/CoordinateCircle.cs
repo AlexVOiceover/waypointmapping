@@ -29,6 +29,6 @@ namespace WaypointMapping.Server.Models
         /// Gets or sets the type of shape (typically "circle")
         /// </summary>
         [JsonProperty("type")]
-        public string Type { get; set; }
+        public string Type { get; set; } = "circle";
     }
 }

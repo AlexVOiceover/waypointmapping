@@ -38,14 +38,16 @@ namespace WaypointMapping.Server.Services
             request.ExitOnRCLost ??= "executeLostAction";
             request.ExecuteRCLostAction ??= "hover";
             request.GlobalTransitionalSpeed =
-                request.GlobalTransitionalSpeed <= 0 ? 2.5 : request.GlobalTransitionalSpeed;
+                request.GlobalTransitionalSpeed <= 0
+                    ? DroneDefaults.GlobalTransitionalSpeed
+                    : request.GlobalTransitionalSpeed;
 
             if (request.DroneInfo == null)
             {
                 request.DroneInfo = new DroneInfo
                 {
-                    DroneEnumValue = 68, // Default value
-                    DroneSubEnumValue = 0 // Default value
+                    DroneEnumValue = DroneDefaults.DroneEnumValue,
+                    DroneSubEnumValue = DroneDefaults.DroneSubEnumValue
                 };
             }
         }

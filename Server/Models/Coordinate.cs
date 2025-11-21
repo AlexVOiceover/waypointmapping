@@ -6,5 +6,4 @@
         public double Lng { get; set; }
         public double Radius { get; set; }
     }
-
 }

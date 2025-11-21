@@ -11,9 +11,9 @@ namespace WaypointMapping.Server.Data
         public double Speed { get; set; }
         public double Heading { get; set; }
         public double GimbalAngle { get; set; }
-        public string Action { get; set; }
+        public string Action { get; set; } = "takePhoto";
         public int FlightOrientation { get; set; } // 0 = East-West, 1 = North-South
-        public bool FlipPath { get; set; } // Kääntää reitin
-        public bool StraightenPaths { get; set; } // Suoristaa reitit
+        public bool FlipPath { get; set; } // Flips the path
+        public bool StraightenPaths { get; set; } // Straightens the paths
     }
 }

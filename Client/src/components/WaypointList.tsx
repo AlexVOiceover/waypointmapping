@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -7,33 +6,51 @@ import { tableStyles, iconStyles } from '@/lib/styles';
 import { cn } from '@/lib/utils';
 import { ACTION_OPTIONS, ACTION_ICONS } from '@/lib/constants';
 
-// Function to calculate row class based on waypoint type
-const getRowClass = (waypoint, index, waypoints) => {
-  const isVertex = waypoint.isVertex || 
-    index === 0 || 
-    index === waypoints.length - 1 || 
-    (index > 0 && index < waypoints.length - 1 && hasSignificantHeadingChange(waypoints[index-1], waypoint, waypoints[index+1]));
-  
-  return isVertex ? 'bg-yellow-50' : '';
-};
+interface Waypoint {
+  id: string | number;
+  lat: number;
+  lng: number;
+  altitude: number;
+  speed: number;
+  angle: number;
+  heading: number;
+  action: string;
+  isVertex?: boolean;
+}
+
+interface WaypointListProps {
+  waypoints: Waypoint[];
+  onUpdate: (id: string | number, data: Partial<Waypoint>) => void;
+  onDelete: (id: string | number) => void;
+}
 
 // Function to check if there's a significant heading change (to detect vertices)
-const hasSignificantHeadingChange = (prev, current, next) => {
+const hasSignificantHeadingChange = (prev: Waypoint | undefined, current: Waypoint, next: Waypoint | undefined): boolean => {
   if (!prev || !next) return false;
-  
+
   const angle1 = Math.atan2(current.lat - prev.lat, current.lng - prev.lng) * 180 / Math.PI;
   const angle2 = Math.atan2(next.lat - current.lat, next.lng - current.lng) * 180 / Math.PI;
-  
+
   const change = Math.abs((angle2 - angle1 + 180) % 360 - 180);
   return change > 15;
 };
 
-const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
-  const handleFieldChange = (id, field, value) => {
+// Function to calculate row class based on waypoint type
+const getRowClass = (waypoint: Waypoint, index: number, waypoints: Waypoint[]): string => {
+  const isVertex = waypoint.isVertex ||
+    index === 0 ||
+    index === waypoints.length - 1 ||
+    (index > 0 && index < waypoints.length - 1 && hasSignificantHeadingChange(waypoints[index-1], waypoint, waypoints[index+1]));
+
+  return isVertex ? 'bg-yellow-50' : '';
+};
+
+const WaypointList: React.FC<WaypointListProps> = ({ waypoints, onUpdate, onDelete }) => {
+  const handleFieldChange = (id: string | number, field: keyof Waypoint, value: string) => {
     onUpdate(id, { [field]: field === 'action' ? value : parseFloat(value) });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id: string | number) => {
     onDelete(id);
   };
 
@@ -82,8 +99,8 @@ const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex items-center gap-1">
-                      <div 
-                        className="text-sm transition-transform" 
+                      <div
+                        className="text-sm transition-transform"
                         style={{ transform: `rotate(${wp.heading}deg)` }}
                       >
                         ➤
@@ -118,7 +135,7 @@ const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
                         ))}
                       </Select>
                       <span className="text-sm">
-                        {ACTION_ICONS[wp.action]}
+                        {ACTION_ICONS[wp.action as keyof typeof ACTION_ICONS]}
                       </span>
                     </div>
                   </td>
@@ -132,20 +149,20 @@ const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
                       >
                         <Trash2 className={iconStyles.small} />
                       </Button>
-                      <span 
+                      <span
                         className="inline-block px-1.5 py-0.5 text-xs font-medium text-white rounded"
                         style={{
-                          backgroundColor: index === 0 || index === waypoints.length - 1 ? '#FF4500' : 
+                          backgroundColor: index === 0 || index === waypoints.length - 1 ? '#FF4500' :
                             getRowClass(wp, index, waypoints) ? '#FFC107' : '#3CB371'
                         }}
                         title={
-                          index === 0 ? 'Start Point' : 
+                          index === 0 ? 'Start Point' :
                           index === waypoints.length - 1 ? 'End Point' :
                           getRowClass(wp, index, waypoints) ? 'Vertex' : 'Intermediate'
                         }
                       >
-                        {index === 0 ? 'S' : 
-                         index === waypoints.length - 1 ? 'E' : 
+                        {index === 0 ? 'S' :
+                         index === waypoints.length - 1 ? 'E' :
                          getRowClass(wp, index, waypoints) ? 'V' : 'I'}
                       </span>
                     </div>
@@ -158,23 +175,6 @@ const WaypointList = ({ waypoints, onUpdate, onDelete }) => {
       )}
     </div>
   );
-};
-
-WaypointList.propTypes = {
-  waypoints: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-      lat: PropTypes.number.isRequired,
-      lng: PropTypes.number.isRequired,
-      altitude: PropTypes.number.isRequired,
-      speed: PropTypes.number.isRequired,
-      angle: PropTypes.number.isRequired,
-      heading: PropTypes.number.isRequired,
-      action: PropTypes.string.isRequired
-    })
-  ).isRequired,
-  onUpdate: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired
 };
 
 export default WaypointList;
