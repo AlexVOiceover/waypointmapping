@@ -30,22 +30,19 @@ export interface Coordinate {
 export interface GenerateWaypointRequest {
   Bounds: Coordinate[];
   BoundsType: string;
-  altitude?: number;
-  speed?: number;
-  angle?: number;
-  photoInterval?: number;
-  overlap?: number;
-  inDistance?: number;
+  Altitude?: number;
+  Speed?: number;
+  Angle?: number;
+  PhotoInterval?: number;
+  Overlap?: number;
+  LineSpacing?: number;
   IsNorthSouth?: boolean;
-  isNorthSouth?: boolean;
   UseEndpointsOnly?: boolean;
-  useEndpointsOnly?: boolean;
   AllPointsAction?: string;
-  allPointsAction?: string;
-  finalAction?: string;
-  flipPath?: boolean;
-  unitType?: number;
-  startingIndex?: number;
+  FinalAction?: string;
+  FlipPath?: boolean;
+  UnitType?: number;
+  StartingIndex?: number;
 }
 
 export interface WaypointModel {
@@ -90,23 +87,19 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
     const cleanRequest = {
       Bounds: [] as Coordinate[],
       BoundsType: String(request.BoundsType || ''),
-      Altitude: Number(request.altitude || 60),
-      Speed: Number(request.speed || 2.5),
-      Angle: Number(request.angle || -45),
-      PhotoInterval: Number(request.photoInterval || 2),
-      Overlap: Number(request.overlap || 80),
-      LineSpacing: Number(request.inDistance || 10),
-      // Use the standardized property name IsNorthSouth that matches the server-side model
-      // Check both PascalCase and camelCase property names
-      IsNorthSouth: request.IsNorthSouth === true || request.isNorthSouth === true,
-      // Check both PascalCase and camelCase property names to avoid case sensitivity issues
-      UseEndpointsOnly: request.UseEndpointsOnly === true || request.useEndpointsOnly === true,
-      AllPointsAction: String(request.AllPointsAction || request.allPointsAction || 'takePhoto'),
-      Action: String(request.AllPointsAction || request.allPointsAction || 'takePhoto'),
-      FinalAction: String(request.finalAction || '0'),
-      FlipPath: Boolean(request.flipPath),
-      UnitType: Number(request.unitType || 0),
-      StartingIndex: Number(request.startingIndex || 1)
+      Altitude: Number(request.Altitude || 60),
+      Speed: Number(request.Speed || 2.5),
+      Angle: Number(request.Angle || -45),
+      PhotoInterval: Number(request.PhotoInterval || 2),
+      Overlap: Number(request.Overlap || 80),
+      LineSpacing: Number(request.LineSpacing || 10),
+      IsNorthSouth: request.IsNorthSouth === true,
+      UseEndpointsOnly: request.UseEndpointsOnly === true,
+      AllPointsAction: String(request.AllPointsAction || 'takePhoto'),
+      FinalAction: String(request.FinalAction || '0'),
+      FlipPath: Boolean(request.FlipPath),
+      UnitType: Number(request.UnitType || 0),
+      StartingIndex: Number(request.StartingIndex || 1)
     };
 
     // Safely copy bounds array, ensuring we only take the Lat and Lng properties
@@ -145,26 +138,6 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
     }
 
     console.log('Sending clean request to API:', cleanRequest);
-
-    // Test that JSON serialization works before sending
-    let serializedData: string;
-    try {
-      serializedData = JSON.stringify(cleanRequest);
-      console.log('Serialized request data length:', serializedData.length);
-    } catch (jsonError) {
-      console.error('Request cannot be serialized to JSON:', jsonError);
-      throw new Error('Request contains circular references that cannot be serialized');
-    }
-
-    // Log the useEndpointsOnly value before sending
-    console.log('Original useEndpointsOnly in request:', request.useEndpointsOnly);
-    console.log('Original UseEndpointsOnly in request:', request.UseEndpointsOnly);
-    console.log('UseEndpointsOnly value in cleanRequest:', cleanRequest.UseEndpointsOnly);
-
-    // Log the isNorthSouth value before sending
-    console.log('Original isNorthSouth in request:', request.isNorthSouth);
-    console.log('Original IsNorthSouth in request:', request.IsNorthSouth);
-    console.log('IsNorthSouth value in cleanRequest:', cleanRequest.IsNorthSouth);
 
     // Use the clean request directly instead of re-parsing the serialized data
     const response = await api.post<WaypointResponse[]>('/waypoints/generate', cleanRequest);
