@@ -1,491 +1,368 @@
-# WaypointMapping Refactoring Guide
+# WaypointMapping - Future Improvements
 
-**Version:** 2.0
-**Date:** 2025-11-21
-**Status:** Living Document
+**Version:** 3.0
+**Date:** 2025-11-22
+**Status:** All Critical & Major Items Complete
 
 ---
 
-## Executive Summary
+## Current Status
 
-The WaypointMapping application is a React 18 + .NET 8 drone flight path planning tool. All critical and major server-side refactoring has been completed. This document now focuses on remaining client-side improvements and optional enhancements.
-
-**Current Statistics:**
+**Statistics:**
 - **Server:** 33 C# files (~7,000 lines)
-- **Client:** 45+ TypeScript files, ~15,200 lines (100% TypeScript)
-- **Build Status:** ✅ **0 Errors, 5 Warnings** (only react-refresh warnings)
-- **Test Status:** ✅ **20/20 Tests Passing**
-- **Type Safety:** ✅ **100%** - Zero `any` types
-- **Critical Issues:** ✅ **0** (All completed)
-- **Major Issues:** ✅ **0** (All completed)
-- **Minor Issues:** 0 remaining
-
-**Completed (All Sections):**
-- ✅ 1.1 Architecture: Dual Service Implementation
-- ✅ 1.2 Duplicate API Endpoints
-- ✅ 2.1 Nullable Reference Warnings
-- ✅ 2.2 Extract Shape Type Mapping to Factory
-- ✅ 2.3 Add Input Validation with Data Annotations
-- ✅ 2.4 Improve Exception Handling
-- ✅ 2.5 Extract Magic Numbers to Configuration
-- ✅ 3.1 Convert All .jsx to .tsx
-- ✅ 3.2 Fix Type Assertions and 'any' Usage
-- ✅ 3.3 Break Down Large Components
-- ✅ 3.4 Split Context to Prevent Unnecessary Re-renders
-- ✅ 3.5 Consistent API Error Handling
-- ✅ 3.6 Fix ESLint Configuration
-- ✅ 3.7 Improve API Configuration
+- **Client:** 45+ TypeScript files (~15,200 lines, 100% TypeScript)
+- **Build Status:** ✅ 0 Errors, 5 Warnings (react-refresh only)
+- **Test Status:** ✅ 20/20 Tests Passing
+- **Type Safety:** ✅ 100% - Zero `any` types
+- **All Critical/Major Issues:** ✅ RESOLVED
 
 ---
 
-## 3. Client-Side Refactoring (All Completed)
+## Optional Enhancements
 
-### ✅ 3.3 Break Down Large Components (COMPLETED)
+### 1. Testing Improvements
 
-**Status:** ✅ **COMPLETED**
-**Files Created:**
-- [Client/src/hooks/useDrawingTools.ts](Client/src/hooks/useDrawingTools.ts) (303 lines)
-- [Client/src/hooks/useProbeHeight.ts](Client/src/hooks/useProbeHeight.ts) (121 lines)
-- [Client/src/components/PlaceAutocomplete.tsx](Client/src/components/PlaceAutocomplete.tsx) (150 lines)
-- [Client/src/components/DrawingIndicators.tsx](Client/src/components/DrawingIndicators.tsx) (67 lines)
+#### 1.1 Add Client-Side Tests
+**Benefit:** Increase confidence in frontend changes
 
-**Files Modified:**
-- [Client/src/components/MapComponent.tsx](Client/src/components/MapComponent.tsx) - Reduced from 999 to 565 lines (43% reduction)
+**Suggested:**
+- Unit tests for hooks (useDrawingTools, useProbeHeight, useWaypointAPI)
+- Component tests for MapComponent, PlaceAutocomplete
+- Integration tests for waypoint generation flow
 
-**Implementation:**
-```
-Before: MapComponent.tsx (999 lines)
-After:  MapComponent.tsx (565 lines)
-        + useDrawingTools.ts (303 lines) - Rectangle, circle, polyline drawing logic
-        + useProbeHeight.ts (121 lines) - Elevation service and probe markers
-        + PlaceAutocomplete.tsx (150 lines) - Google Places autocomplete
-        + DrawingIndicators.tsx (67 lines) - Visual feedback during drawing
-        = 1,206 total lines (better organized)
-```
+**Tools:**
+- Vitest + React Testing Library
+- MSW for API mocking
 
-**Benefits Achieved:**
-- ✅ MapComponent reduced from 999 → 565 lines (43% reduction)
-- ✅ Drawing logic extracted into reusable `useDrawingTools` hook
-- ✅ Elevation/probe functionality isolated in `useProbeHeight` hook
-- ✅ Place autocomplete extracted into standalone component
-- ✅ Each file has single responsibility
-- ✅ Easier to test and maintain
-- ✅ Build: 0 Errors, 5 Warnings (only react-refresh)
-- ✅ All functionality preserved
+#### 1.2 Increase Server Test Coverage
+**Benefit:** Better coverage of edge cases
 
----
+**Areas to expand:**
+- ShapeDataFactory edge cases
+- GeometryService polygon validation
+- Error handling scenarios in controllers
 
-### ✅ 3.4 Split Context to Prevent Unnecessary Re-renders (COMPLETED)
-
-**Status:** ✅ **COMPLETED**
-**Files Created:**
-- [Client/src/context/FlightParamsContext.tsx](Client/src/context/FlightParamsContext.tsx)
-- [Client/src/context/ShapeContext.tsx](Client/src/context/ShapeContext.tsx)
-- [Client/src/context/AppProviders.tsx](Client/src/context/AppProviders.tsx)
-
-**Files Modified:**
-- [Client/src/context/MapContext.tsx](Client/src/context/MapContext.tsx) - Now contains only map refs and functions
-- [Client/src/components/MapComponent.tsx](Client/src/components/MapComponent.tsx) - Uses AppProviders
-- [Client/src/components/FlightParametersPanel.tsx](Client/src/components/FlightParametersPanel.tsx) - Uses FlightParamsContext
-- [Client/src/hooks/useWaypointAPI.ts](Client/src/hooks/useWaypointAPI.ts) - Uses separate contexts
-
-**Implementation:**
-```typescript
-// Three separate contexts for better performance
-MapContext         → Map refs (mapRef, drawingManagerRef, genInfoWindowRef) + map functions
-FlightParamsContext → All flight parameters (altitude, speed, angle, etc.)
-ShapeContext       → Shapes, waypoints, bounds, selected items
-
-// Combined provider
-<AppProviders>      → Wraps FlightParamsProvider > ShapeProvider > MapProvider
-  <MapComponent />
-</AppProviders>
-```
-
-**Benefits Achieved:**
-- ✅ Components only re-render when their specific context changes
-- ✅ Better performance with granular control
-- ✅ Cleaner separation of concerns
-- ✅ Build: 0 Errors, 4 Warnings (only react-refresh)
-- ✅ TypeScript: 100% type-safe
-
----
-
-### 3.5 Consistent API Error Handling
-
-**Severity:** LOW
-**Benefit:** Better error messages, debugging
-
-**Current:**
-```typescript
-catch (error) {
-    if (axios.isAxiosError(error)) {
-        throw error.response?.data || 'Server error';
-    }
-}
-```
-
-**Problem:** Sometimes throws object, sometimes throws string
-
-**Proposed Solution:**
-```typescript
-// Client/src/services/ApiError.ts
-export class ApiError extends Error {
-    constructor(
-        public statusCode: number,
-        public data: unknown,
-        message?: string
-    ) {
-        super(message || 'API Error');
-        this.name = 'ApiError';
-    }
-}
-
-// Client/src/services/WaypointService.ts
-export const generateWaypoints = async (request: GenerateWaypointRequest): Promise<WaypointResponse[]> => {
-    try {
-        const response = await api.post<WaypointResponse[]>('/waypoints/generate', request);
-        return response.data;
-    } catch (error) {
-        if (axios.isAxiosError(error)) {
-            throw new ApiError(
-                error.response?.status || 500,
-                error.response?.data,
-                `Failed to generate waypoints: ${error.message}`
-            );
-        }
-        throw error;
-    }
-};
-
-// Usage
-try {
-    const waypoints = await generateWaypoints(request);
-} catch (error) {
-    if (error instanceof ApiError) {
-        console.error(`API Error ${error.statusCode}:`, error.data);
-        // Show user-friendly message based on status code
-    }
-}
-```
-
-**Benefits:**
-- Consistent error structure
-- Better error handling
-- Type-safe error information
-
----
-
-### ✅ 3.6 Fix ESLint Configuration (COMPLETED)
-
-**Status:** ✅ **COMPLETED**
-**Files Modified:**
-- [Client/eslint.config.js](Client/eslint.config.js) - Enhanced ESLint rules for code quality
-
-**Implementation:**
-```javascript
-// Strict rules for main codebase
-'@typescript-eslint/no-explicit-any': 'error',                    // Block any types
-'@typescript-eslint/no-empty-object-type': 'error',              // Enforce proper types
-'@typescript-eslint/no-unused-vars': ['error', {                 // Catch unused code
-  argsIgnorePattern: '^_',
-  varsIgnorePattern: '^_'
-}],
-'@typescript-eslint/explicit-function-return-type': 'off',       // Too strict for React
-'@typescript-eslint/no-non-null-assertion': 'warn',              // Allow ! but warn
-
-// Exception for shadcn/ui components
-{
-  files: ['src/components/ui/**/*.{ts,tsx}'],
-  rules: {
-    '@typescript-eslint/no-empty-object-type': 'off',  // Allow empty interfaces for patterns
-  },
-}
-```
-
-**Benefits Achieved:**
-- ✅ **Prevents `any` types** - Now enforced as error instead of warning
-- ✅ **Catches unused variables** - Error on unused vars/args (except `_` prefix)
-- ✅ **Maintains type safety** - Strict TypeScript checking throughout
-- ✅ **Allows UI library patterns** - Exception for shadcn/ui components
-- ✅ **Build**: 0 Errors, 5 Warnings (react-refresh + non-null assertion)
-
-**Quality Gates:**
-- Any `any` type usage → Build fails
-- Unused variables/arguments → Build fails
-- Empty object types (outside UI lib) → Build fails
-
----
-
-### ✅ 3.7 Improve API Configuration (COMPLETED)
-
-**Status:** ✅ **COMPLETED**
-**Files Created:**
-- [Client/src/config/api.config.ts](Client/src/config/api.config.ts) - Centralized API configuration
-
-**Files Modified:**
-- [Client/src/services/WaypointService.ts](Client/src/services/WaypointService.ts) - Uses API_CONFIG and API_ENDPOINTS
-- [Client/src/hooks/useWaypointAPI.ts](Client/src/hooks/useWaypointAPI.ts) - Uses centralized configuration
-
-**Implementation:**
-```typescript
-// Client/src/config/api.config.ts
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-
-// Fail fast at startup with clear error message
-if (!apiBaseUrl) {
-  throw new Error(
-    'VITE_API_BASE_URL environment variable is required.\n' +
-    'Please create a .env file with VITE_API_BASE_URL=http://localhost:5000'
-  );
-}
-
-export const API_CONFIG = {
-  baseURL: apiBaseUrl,
-  timeout: 30000,        // 30 seconds
-  retries: 3,
-  retryDelay: 1000,
-} as const;
-
-export const API_ENDPOINTS = {
-  waypoints: {
-    generate: '/waypoints/generate',
-    update: (id: number) => `/waypoints/${id}`,
-    delete: (id: number) => `/waypoints/${id}`,
-  },
-  kmz: {
-    generate: '/KMZ/generate',
-  },
-} as const;
-```
-
-**Benefits Achieved:**
-- ✅ **Fail fast** - Missing env var causes immediate error at startup, not at runtime
-- ✅ **Clear error messages** - Tells developer exactly what's needed
-- ✅ **Centralized configuration** - Single source of truth for API settings
-- ✅ **Type-safe endpoints** - Centralized endpoint paths with TypeScript safety
-- ✅ **Configurable timeouts** - Easy to adjust request timeouts
-- ✅ **Build**: 0 Errors, 5 Warnings (react-refresh + non-null assertion)
-
-**Developer Experience:**
-- Missing `.env` file → Clear error message instead of silent failure
-- All API configuration in one place
-- Easy to modify timeouts, retries, and endpoints
-
----
-
-## 4. Optional Project Structure Improvements
-
-### 4.1 Organize Test Files
-
-**Severity:** LOW
+#### 1.3 Organize Test Files
 **Benefit:** Better test organization
 
-**Current:**
-```
-Server.Tests/
-├── WaypointControllerTests.cs
-├── WaypointServiceTests.cs
-├── PolylineShapeServiceTests.cs
-└── IntegrationTests.cs
-```
-
-**Proposed:**
+**Proposed Structure:**
 ```
 Server.Tests/
 ├── Unit/
 │   ├── Services/
-│   │   ├── WaypointServiceTests.cs
-│   │   ├── PolylineShapeServiceTests.cs
-│   │   ├── CircleShapeServiceTests.cs
-│   │   ├── GeometryServiceTests.cs
-│   │   └── KMZServiceTests.cs
 │   ├── Controllers/
-│   │   ├── WaypointsControllerTests.cs
-│   │   └── KMZControllerTests.cs
 │   └── Factories/
-│       └── ShapeDataFactoryTests.cs
 ├── Integration/
-│   └── WaypointGenerationIntegrationTests.cs
 └── TestHelpers/
-    ├── TestDataBuilder.cs
-    └── WaypointBuilder.cs
 ```
 
 ---
 
-### 4.2 Add Configuration Files
+### 2. Developer Experience
 
-**Severity:** LOW
+#### 2.1 Add Configuration Files
 **Benefit:** Consistent code style across team
 
-**`.editorconfig`:**
-```ini
-root = true
+**Files to add:**
+- `.editorconfig` - Editor settings
+- `Client/.prettierrc` - Code formatting rules
+- `.nvmrc` or `.node-version` - Node version specification
 
-[*.cs]
-indent_style = space
-indent_size = 4
-end_of_line = crlf
-charset = utf-8
-trim_trailing_whitespace = true
+#### 2.2 Add Pre-commit Hooks
+**Benefit:** Catch issues before commits
 
-[*.{ts,tsx,js,jsx}]
-indent_style = space
-indent_size = 2
-end_of_line = lf
-
-[*.json]
-indent_style = space
-indent_size = 2
-```
-
-**`Client/.prettierrc`:**
+**Using Husky + lint-staged:**
 ```json
 {
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2,
-  "trailingComma": "es5",
-  "arrowParens": "always",
-  "printWidth": 100
+  "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+  "*.{cs}": ["dotnet format"]
 }
 ```
 
+#### 2.3 Improve Error Messages
+**Benefit:** Better debugging experience
+
+**Areas:**
+- More descriptive API error responses
+- Client-side error boundaries
+- Better validation error messages
+
 ---
 
-### 4.3 Add CI/CD Pipeline
+### 3. Performance Optimizations
 
-**Severity:** LOW
+#### 3.1 Memoization
+**Benefit:** Reduce unnecessary re-renders
+
+**Candidates:**
+- Expensive calculations in waypoint generation
+- Map marker rendering
+- Flight path polylines
+
+#### 3.2 Code Splitting
+**Benefit:** Faster initial load
+
+**Strategy:**
+- Lazy load MapComponent
+- Split vendor bundles
+- Route-based splitting (if multiple pages added)
+
+#### 3.3 Web Workers
+**Benefit:** Move heavy computation off main thread
+
+**Use cases:**
+- Waypoint calculations
+- KML file generation
+- Coordinate transformations
+
+---
+
+### 4. Feature Enhancements
+
+#### 4.1 Waypoint Persistence
+**Benefit:** Save/load flight plans
+
+**Implementation:**
+- LocalStorage for quick save
+- Export/import JSON format
+- Server-side storage (optional)
+
+#### 4.2 Undo/Redo
+**Benefit:** Better user experience
+
+**Strategy:**
+- Command pattern for actions
+- History stack for shapes/waypoints
+- Keyboard shortcuts (Ctrl+Z, Ctrl+Y)
+
+#### 4.3 Multi-Shape Support
+**Benefit:** Plan complex missions
+
+**Features:**
+- Multiple shapes on map simultaneously
+- Different flight parameters per shape
+- Combined waypoint output
+
+#### 4.4 Offline Support
+**Benefit:** Work without internet
+
+**Implementation:**
+- Service Worker for caching
+- IndexedDB for data persistence
+- Offline-first architecture
+
+---
+
+### 5. Deployment & Infrastructure
+
+#### 5.1 CI/CD Pipeline
 **Benefit:** Automated testing and deployment
 
-**`.github/workflows/test.yml`:**
+**Suggested workflow:**
 ```yaml
-name: Test and Build
-
-on: [push, pull_request]
-
-jobs:
-  test-server:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
-
-  test-client:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        working-directory: ./Client
-        run: npm ci
-
-      - name: Lint
-        working-directory: ./Client
-        run: npm run lint
-
-      - name: Build
-        working-directory: ./Client
-        run: npm run build
+- Run tests (server + client)
+- Build artifacts
+- Deploy to staging
+- Run smoke tests
+- Deploy to production
 ```
+
+**Tools:** GitHub Actions, GitLab CI, or Azure DevOps
+
+#### 5.2 Docker Support
+**Benefit:** Easy deployment and scaling
+
+**Files needed:**
+- `Dockerfile` (multi-stage build)
+- `docker-compose.yml` (local development)
+- `.dockerignore`
+
+#### 5.3 Environment Management
+**Benefit:** Consistent deployments
+
+**Environments:**
+- Development (local)
+- Staging (testing)
+- Production
+
+**Configuration:**
+- Environment-specific `.env` files
+- Secrets management
+- Feature flags
 
 ---
 
-### 4.4 Add Docker Support
+### 6. Monitoring & Observability
 
-**Severity:** LOW
-**Benefit:** Easy deployment
+#### 6.1 Error Tracking
+**Benefit:** Catch production issues
 
-**`Dockerfile`:**
-```dockerfile
-# Build server
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-server
-WORKDIR /src
-COPY ["Server/MappingBackend.Server.csproj", "Server/"]
-RUN dotnet restore "Server/MappingBackend.Server.csproj"
-COPY Server/ Server/
-RUN dotnet build "Server/MappingBackend.Server.csproj" -c Release -o /app/build
-RUN dotnet publish "Server/MappingBackend.Server.csproj" -c Release -o /app/publish
+**Tools:**
+- Sentry for frontend errors
+- Application Insights for backend
+- Structured logging
 
-# Build client
-FROM node:20 AS build-client
-WORKDIR /src/Client
-COPY Client/package*.json ./
-RUN npm ci
-COPY Client/ .
-RUN npm run build
+#### 6.2 Analytics
+**Benefit:** Understand user behavior
 
-# Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
-WORKDIR /app
-COPY --from=build-server /app/publish .
-COPY --from=build-client /src/Client/dist ./wwwroot
-EXPOSE 80
-ENTRYPOINT ["dotnet", "MappingBackend.Server.dll"]
-```
+**Metrics to track:**
+- Waypoint generation frequency
+- Shape types used
+- Common flight parameters
+- Error rates
 
-**`docker-compose.yml`:**
-```yaml
-version: '3.8'
+#### 6.3 Performance Monitoring
+**Benefit:** Identify bottlenecks
 
-services:
-  app:
-    build: .
-    ports:
-      - "5037:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-    env_file:
-      - .env.production
-```
+**Metrics:**
+- API response times
+- Frontend render performance
+- Map interaction latency
 
 ---
 
-## 5. Summary
+### 7. Documentation
 
-### ✅ Completed Refactoring
-All critical and major issues have been resolved:
-- Server-side architecture cleaned up
-- Type safety achieved (100% TypeScript, 0 any types)
-- Build with 0 errors, 0 warnings
-- All 20 tests passing
-- Code quality significantly improved
+#### 7.1 API Documentation
+**Benefit:** Easier integration and maintenance
 
-### 📋 Remaining Optional Tasks
-All remaining tasks are **optional** and focus on:
-1. **Component organization** (3.3) - Break down large files
-2. **Performance** (3.4) - Context splitting
-3. **Developer experience** (3.5-3.7) - Error handling, linting, config
-4. **Project structure** (4.1-4.4) - Tests, CI/CD, Docker
+**Tools:**
+- Swagger/OpenAPI for REST endpoints
+- XML comments on C# controllers
+- Auto-generated docs
 
-### 🎯 Next Steps (If Desired)
-Choose based on your priorities:
-- **Performance focus**: Start with 3.4 (Context splitting)
-- **Maintainability focus**: Start with 3.3 (Component breakdown)
-- **Team standards**: Add 4.2 (Config files) and 4.3 (CI/CD)
-- **Deployment**: Add 4.4 (Docker support)
+#### 7.2 Component Documentation
+**Benefit:** Easier frontend development
 
-The codebase is now **production-ready** with excellent code quality!
+**Tools:**
+- Storybook for component showcase
+- JSDoc comments
+- Usage examples
+
+#### 7.3 User Guide
+**Benefit:** Help users learn features
+
+**Contents:**
+- Getting started tutorial
+- Feature explanations
+- Troubleshooting guide
+- FAQ
 
 ---
 
-*Last Updated: 2025-11-21*
+### 8. Accessibility
+
+#### 8.1 WCAG Compliance
+**Benefit:** Accessible to all users
+
+**Items:**
+- Keyboard navigation
+- Screen reader support
+- Color contrast
+- ARIA labels
+
+#### 8.2 Mobile Support
+**Benefit:** Use on tablets/phones
+
+**Considerations:**
+- Responsive design
+- Touch interactions
+- Simplified mobile UI
+
+---
+
+### 9. Security
+
+#### 9.1 Security Headers
+**Benefit:** Protect against common attacks
+
+**Headers to add:**
+- Content-Security-Policy
+- X-Frame-Options
+- X-Content-Type-Options
+
+#### 9.2 Input Validation
+**Benefit:** Prevent malicious input
+
+**Areas:**
+- Coordinate bounds checking
+- File upload validation (if added)
+- SQL injection prevention (already using EF Core parameterization)
+
+#### 9.3 Rate Limiting
+**Benefit:** Prevent abuse
+
+**Implementation:**
+- ASP.NET Core rate limiting middleware
+- Per-user or per-IP limits
+- Different limits for different endpoints
+
+---
+
+### 10. Code Quality
+
+#### 10.1 Break Down useWaypointAPI Hook
+**Benefit:** Better maintainability
+
+**Current:** 810 lines
+
+**Suggested structure:**
+```
+hooks/
+├── useWaypointAPI.ts (orchestrator, ~100 lines)
+├── useWaypointGeneration.ts (~200 lines)
+├── useElevationAdjustment.ts (~150 lines)
+├── useWaypointMarkers.ts (~200 lines)
+└── useKMLGeneration.ts (~150 lines)
+```
+
+#### 10.2 Extract Constants
+**Benefit:** Single source of truth
+
+**Create:**
+- `constants/map.ts` - Map defaults, zoom levels
+- `constants/shapes.ts` - Shape styling options
+- `constants/waypoints.ts` - Waypoint defaults
+
+#### 10.3 Add Type Utilities
+**Benefit:** Reusable type helpers
+
+**Examples:**
+- `types/api.ts` - API request/response types
+- `types/map.ts` - Google Maps type extensions
+- `types/utils.ts` - Generic type utilities
+
+---
+
+## Priority Recommendations
+
+### High Value, Low Effort:
+1. Add `.editorconfig` and `.prettierrc` (2.1)
+2. Break down `useWaypointAPI` hook (10.1)
+3. Add API documentation with Swagger (7.1)
+4. Implement pre-commit hooks (2.2)
+
+### High Value, Medium Effort:
+1. Add CI/CD pipeline (5.1)
+2. Implement undo/redo (4.2)
+3. Add client-side tests (1.1)
+4. Docker support (5.2)
+
+### High Value, High Effort:
+1. Waypoint persistence (4.1)
+2. Multi-shape support (4.3)
+3. Offline support (4.4)
+4. Complete accessibility audit (8.1)
+
+---
+
+## Notes
+
+- **All core functionality is complete and production-ready**
+- All items in this document are **optional enhancements**
+- Choose improvements based on your specific needs and priorities
+- Current codebase has excellent code quality and maintainability
+
+---
+
+*Last Updated: 2025-11-22*
