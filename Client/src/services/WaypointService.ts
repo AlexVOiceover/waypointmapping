@@ -43,6 +43,9 @@ export interface GenerateWaypointRequest {
   FlipPath?: boolean;
   UnitType?: number;
   StartingIndex?: number;
+  FocalLength?: number;
+  SensorWidth?: number;
+  SensorHeight?: number;
 }
 
 export interface WaypointModel {
@@ -99,7 +102,10 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
       FinalAction: String(request.FinalAction || '0'),
       FlipPath: Boolean(request.FlipPath),
       UnitType: Number(request.UnitType || 0),
-      StartingIndex: Number(request.StartingIndex || 1)
+      StartingIndex: Number(request.StartingIndex || 1),
+      FocalLength: Number(request.FocalLength || 24),
+      SensorWidth: Number(request.SensorWidth || 9.6),
+      SensorHeight: Number(request.SensorHeight || 7.2)
     };
 
     // Safely copy bounds array, ensuring we only take the Lat and Lng properties
@@ -138,6 +144,7 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
     }
 
     console.log('Sending clean request to API:', cleanRequest);
+    console.log('Request JSON:', JSON.stringify(cleanRequest, null, 2));
 
     // Use the clean request directly instead of re-parsing the serialized data
     const response = await api.post<WaypointResponse[]>('/waypoints/generate', cleanRequest);
@@ -156,6 +163,7 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
     if (axios.isAxiosError(error)) {
       console.error('Response status:', error.response?.status);
       console.error('Response data:', error.response?.data);
+      console.error('Validation errors:', JSON.stringify(error.response?.data?.errors, null, 2));
       throw new ApiError(
         error.response?.status || 500,
         error.response?.data,

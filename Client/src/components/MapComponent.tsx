@@ -214,7 +214,10 @@ const MapInner: React.FC<MapInnerProps> = ({ downloadLinkRef, mapInstance, setLa
       AllPointsAction: String(flightParameters.allPointsAction || 'takePhoto'),
       FinalAction: String(flightParameters.finalAction || '0'),
       FlipPath: Boolean(flightParameters.flipPath),
-      UnitType: Number(flightParameters.unitType || 0)
+      UnitType: Number(flightParameters.unitType || 0),
+      FocalLength: Number(flightParameters.focalLength || 24),
+      SensorWidth: Number(flightParameters.sensorWidth || 9.6),
+      SensorHeight: Number(flightParameters.sensorHeight || 7.2)
     };
 
     // Test JSON serialization before sending

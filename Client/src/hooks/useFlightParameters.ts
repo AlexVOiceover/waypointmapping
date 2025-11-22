@@ -25,6 +25,9 @@ interface FlightParameters {
   altitude: number;
   speed: number;
   angle: number;
+  focalLength: number;
+  sensorWidth: number;
+  sensorHeight: number;
   interval: number;
   overlap: number;
   inDistance: number;
@@ -209,6 +212,9 @@ export const useFlightParameters = (initialState: FlightParametersInitialState =
         altitude,
         speed,
         angle,
+        focalLength,
+        sensorWidth,
+        sensorHeight,
         interval: photoInterval,
         overlap,
         inDistance,
