@@ -33,8 +33,20 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn', // Warn but don't error on any
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
+      }],
+      '@typescript-eslint/no-explicit-any': 'error', // Prevent any from creeping back in
+      '@typescript-eslint/no-empty-object-type': 'error', // Enforce proper type definitions
+      '@typescript-eslint/explicit-function-return-type': 'off', // Too strict for React components
+      '@typescript-eslint/no-non-null-assertion': 'warn', // Allow ! operator but warn
+    },
+  },
+  // Shadcn/ui components - allow empty interfaces for extensibility patterns
+  {
+    files: ['src/components/ui/**/*.{ts,tsx}'],
+    rules: {
       '@typescript-eslint/no-empty-object-type': 'off', // Allow empty interfaces for shadcn/ui patterns
     },
   },
