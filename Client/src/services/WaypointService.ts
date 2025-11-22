@@ -5,12 +5,12 @@
 
 import axios from 'axios';
 import { ApiError } from './ApiError';
+import { API_CONFIG, API_ENDPOINTS } from '../config/api.config';
 
-const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
-
-// Create API instance
+// Create API instance with centralized configuration
 const api = axios.create({
-  baseURL: `${apiBaseUrl}/api/`,
+  baseURL: `${API_CONFIG.baseURL}/api/`,
+  timeout: API_CONFIG.timeout,
 });
 
 // Waypoint actions enum for consistency
@@ -196,7 +196,7 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
 // Update waypoint on server
 export const updateWaypoint = async (id: number, updatedWaypoint: WaypointModel): Promise<unknown> => {
   try {
-    const response = await api.put(`/waypoints/${id}`, updatedWaypoint);
+    const response = await api.put(API_ENDPOINTS.waypoints.update(id), updatedWaypoint);
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -213,7 +213,7 @@ export const updateWaypoint = async (id: number, updatedWaypoint: WaypointModel)
 // Delete waypoint from server
 export const deleteWaypoint = async (id: number): Promise<unknown> => {
   try {
-    const response = await api.delete(`/waypoints/${id}`);
+    const response = await api.delete(API_ENDPOINTS.waypoints.delete(id));
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {

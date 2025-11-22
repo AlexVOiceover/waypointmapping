@@ -18,9 +18,9 @@ The WaypointMapping application is a React 18 + .NET 8 drone flight path plannin
 - **Type Safety:** ✅ **100%** - Zero `any` types
 - **Critical Issues:** ✅ **0** (All completed)
 - **Major Issues:** ✅ **0** (All completed)
-- **Minor Issues:** 3 remaining (Optional improvements)
+- **Minor Issues:** 2 remaining (Optional improvements)
 
-**Completed (Sections 1-3.6):**
+**Completed (Sections 1-3.7):**
 - ✅ 1.1 Architecture: Dual Service Implementation
 - ✅ 1.2 Duplicate API Endpoints
 - ✅ 2.1 Nullable Reference Warnings
@@ -33,6 +33,7 @@ The WaypointMapping application is a React 18 + .NET 8 drone flight path plannin
 - ✅ 3.4 Split Context to Prevent Unnecessary Re-renders
 - ✅ 3.5 Consistent API Error Handling
 - ✅ 3.6 Fix ESLint Configuration
+- ✅ 3.7 Improve API Configuration
 
 ---
 
@@ -230,39 +231,60 @@ try {
 
 ---
 
-### 3.7 Improve API Configuration
+### ✅ 3.7 Improve API Configuration (COMPLETED)
 
-**Severity:** LOW
-**Benefit:** Better error messages at startup
-**File:** `Client/src/services/WaypointService.ts`
+**Status:** ✅ **COMPLETED**
+**Files Created:**
+- [Client/src/config/api.config.ts](Client/src/config/api.config.ts) - Centralized API configuration
 
-**Current:**
-```typescript
-const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
-```
+**Files Modified:**
+- [Client/src/services/WaypointService.ts](Client/src/services/WaypointService.ts) - Uses API_CONFIG and API_ENDPOINTS
+- [Client/src/hooks/useWaypointAPI.ts](Client/src/hooks/useWaypointAPI.ts) - Uses centralized configuration
 
-**Problem:** Falls back to empty string, which may not work
-
-**Proposed Solution:**
+**Implementation:**
 ```typescript
 // Client/src/config/api.config.ts
-export const API_CONFIG = {
-    baseURL: import.meta.env.VITE_API_BASE_URL,
-    timeout: 30000,
-    retries: 3
-} as const;
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 
-if (!API_CONFIG.baseURL) {
-    throw new Error('VITE_API_BASE_URL environment variable is required');
+// Fail fast at startup with clear error message
+if (!apiBaseUrl) {
+  throw new Error(
+    'VITE_API_BASE_URL environment variable is required.\n' +
+    'Please create a .env file with VITE_API_BASE_URL=http://localhost:5000'
+  );
 }
 
-// Fail at startup, not at runtime
+export const API_CONFIG = {
+  baseURL: apiBaseUrl,
+  timeout: 30000,        // 30 seconds
+  retries: 3,
+  retryDelay: 1000,
+} as const;
+
+export const API_ENDPOINTS = {
+  waypoints: {
+    generate: '/waypoints/generate',
+    update: (id: number) => `/waypoints/${id}`,
+    delete: (id: number) => `/waypoints/${id}`,
+  },
+  kmz: {
+    generate: '/KMZ/generate',
+  },
+} as const;
 ```
 
-**Benefits:**
-- Clear error messages
-- Fail fast during development
-- Centralized configuration
+**Benefits Achieved:**
+- ✅ **Fail fast** - Missing env var causes immediate error at startup, not at runtime
+- ✅ **Clear error messages** - Tells developer exactly what's needed
+- ✅ **Centralized configuration** - Single source of truth for API settings
+- ✅ **Type-safe endpoints** - Centralized endpoint paths with TypeScript safety
+- ✅ **Configurable timeouts** - Easy to adjust request timeouts
+- ✅ **Build**: 0 Errors, 5 Warnings (react-refresh + non-null assertion)
+
+**Developer Experience:**
+- Missing `.env` file → Clear error message instead of silent failure
+- All API configuration in one place
+- Easy to modify timeouts, retries, and endpoints
 
 ---
 

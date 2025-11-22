@@ -5,9 +5,7 @@ import { useMapContext } from '../context/MapContext';
 import { useFlightParamsContext } from '../context/FlightParamsContext';
 import { GenerateWaypointInfoboxText } from '../services/JSFunctions';
 import { ApiError } from '../services/ApiError';
-
-// Get API base URL from environment variables
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+import { API_CONFIG, API_ENDPOINTS } from '../config/api.config';
 
 interface Coordinate {
   Lat: number;
@@ -767,9 +765,14 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
     }
 
     try {
-      const response = await axios.post(`${apiBaseUrl}/api/KMZ/generate`, requestData, {
-        responseType: 'blob'
-      });
+      const response = await axios.post(
+        `${API_CONFIG.baseURL}/api${API_ENDPOINTS.kmz.generate}`,
+        requestData,
+        {
+          responseType: 'blob',
+          timeout: API_CONFIG.timeout,
+        }
+      );
 
       // Create a URL for the blob
       const url = window.URL.createObjectURL(new Blob([response.data]));
