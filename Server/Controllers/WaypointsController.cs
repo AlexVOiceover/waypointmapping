@@ -28,6 +28,18 @@ namespace WaypointMapping.Server.Controllers
             [FromBody] GeneratePointsRequestDTO request
         )
         {
+            if (request == null)
+            {
+                _logger.LogWarning("Waypoint generation request is null");
+                return BadRequest(new { error = "Request body is required." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Waypoint generation validation failed: {Errors}", ModelState);
+                return BadRequest(ModelState);
+            }
+
             try
             {
                 _logger.LogInformation("Generating waypoints for {BoundsType}", request.BoundsType);

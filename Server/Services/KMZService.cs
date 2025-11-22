@@ -157,129 +157,178 @@ namespace WaypointMapping.Server.Services
 
         private async Task<string> GenerateWpmlAsync(FlyToWaylineRequest request)
         {
-            var wpmlContent = new System.Text.StringBuilder();
+            var document = new XDocument(
+                new XElement(
+                    kmlNs + "kml",
+                    new XAttribute(XNamespace.Xmlns + "wpml", wpmlNs),
+                    new XElement(
+                        kmlNs + "Document",
+                        new XElement(
+                            wpmlNs + "missionConfig",
+                            new XElement(wpmlNs + "flyToWaylineMode", request.FlyToWaylineMode),
+                            new XElement(wpmlNs + "finishAction", request.FinishAction),
+                            new XElement(wpmlNs + "exitOnRCLost", request.ExitOnRCLost),
+                            new XElement(wpmlNs + "executeRCLostAction", request.ExecuteRCLostAction),
+                            new XElement(
+                                wpmlNs + "globalTransitionalSpeed",
+                                request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture)
+                            ),
+                            new XElement(
+                                wpmlNs + "droneInfo",
+                                new XElement(
+                                    wpmlNs + "droneEnumValue",
+                                    request.DroneInfo?.DroneEnumValue.ToString(CultureInfo.InvariantCulture)
+                                        ?? DroneDefaults.DroneEnumValue.ToString(CultureInfo.InvariantCulture)
+                                ),
+                                new XElement(
+                                    wpmlNs + "droneSubEnumValue",
+                                    request.DroneInfo?.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture)
+                                        ?? DroneDefaults.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture)
+                                )
+                            )
+                        ),
+                        new XElement(
+                            kmlNs + "Folder",
+                            new XElement(wpmlNs + "templateId", "1"),
+                            new XElement(wpmlNs + "executeHeightMode", "relativeToStartPoint"),
+                            new XElement(wpmlNs + "waylineId", "0"),
+                            new XElement(wpmlNs + "distance", "0"),
+                            new XElement(wpmlNs + "duration", "0"),
+                            new XElement(
+                                wpmlNs + "autoFlightSpeed",
+                                request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture)
+                            ),
+                            request.Waypoints.Select(CreatePlacemark)
+                        )
+                    )
+                )
+            );
 
-            // WPML headers and missionConfig section
-            wpmlContent.AppendLine(@"<?xml version=""1.0"" encoding=""UTF-8""?>");
-            wpmlContent.AppendLine($@"<kml xmlns=""{kmlNs}"" xmlns:wpml=""{wpmlNs}"">");
-            wpmlContent.AppendLine(@"  <Document>");
-            wpmlContent.AppendLine(@"    <wpml:missionConfig>");
-            wpmlContent.AppendLine(
-                $@"      <wpml:flyToWaylineMode>{request.FlyToWaylineMode}</wpml:flyToWaylineMode>"
-            );
-            wpmlContent.AppendLine(
-                $@"      <wpml:finishAction>{request.FinishAction}</wpml:finishAction>"
-            );
-            wpmlContent.AppendLine(
-                $@"      <wpml:exitOnRCLost>{request.ExitOnRCLost}</wpml:exitOnRCLost>"
-            );
-            wpmlContent.AppendLine(
-                $@"      <wpml:executeRCLostAction>{request.ExecuteRCLostAction}</wpml:executeRCLostAction>"
-            );
-            wpmlContent.AppendLine(
-                $@"      <wpml:globalTransitionalSpeed>{request.GlobalTransitionalSpeed.ToString(CultureInfo.InvariantCulture)}</wpml:globalTransitionalSpeed>"
-            );
-            wpmlContent.AppendLine(@"      <wpml:droneInfo>");
-            wpmlContent.AppendLine(
-                $@"        <wpml:droneEnumValue>{request.DroneInfo?.DroneEnumValue.ToString(CultureInfo.InvariantCulture) ?? "68"}</wpml:droneEnumValue>"
-            );
-            wpmlContent.AppendLine(
-                $@"        <wpml:droneSubEnumValue>{request.DroneInfo?.DroneSubEnumValue.ToString(CultureInfo.InvariantCulture) ?? "0"}</wpml:droneSubEnumValue>"
-            );
-            wpmlContent.AppendLine(@"      </wpml:droneInfo>");
-            wpmlContent.AppendLine(@"    </wpml:missionConfig>");
+            using var stringWriter = new StringWriter();
+            document.Save(stringWriter);
+            return await Task.FromResult(stringWriter.ToString());
+        }
 
-            // Start Folder section
-            wpmlContent.AppendLine(@"    <Folder>");
-            wpmlContent.AppendLine(@"      <wpml:templateId>1</wpml:templateId>"); // Reference to actionGroup
-            wpmlContent.AppendLine(
-                @"      <wpml:executeHeightMode>relativeToStartPoint</wpml:executeHeightMode>"
-            );
-            wpmlContent.AppendLine(@"      <wpml:waylineId>0</wpml:waylineId>");
-            wpmlContent.AppendLine(@"      <wpml:distance>0</wpml:distance>");
-            wpmlContent.AppendLine(@"      <wpml:duration>0</wpml:duration>");
-            wpmlContent.AppendLine(@"      <wpml:autoFlightSpeed>2.5</wpml:autoFlightSpeed>");
+        private XElement CreatePlacemark(WaypointGen waypoint)
+        {
+            string actuatorFunc = GetActionActuatorFunc(waypoint.Action);
+            var actionGroup = CreateActionGroup(actuatorFunc, waypoint.Index);
 
-            // Add Placemark elements for waypoints
-            foreach (var waypoint in request.Waypoints)
+            return new XElement(
+                kmlNs + "Placemark",
+                new XElement(
+                    kmlNs + "Point",
+                    new XElement(
+                        kmlNs + "coordinates",
+                        $"{waypoint.Longitude.ToString("F14", CultureInfo.InvariantCulture)}," +
+                        $"{waypoint.Latitude.ToString("F14", CultureInfo.InvariantCulture)}"
+                    )
+                ),
+                new XElement(wpmlNs + "index", waypoint.Index),
+                new XElement(
+                    wpmlNs + "executeHeight",
+                    waypoint.ExecuteHeight.ToString(CultureInfo.InvariantCulture)
+                ),
+                new XElement(
+                    wpmlNs + "waypointSpeed",
+                    waypoint.WaypointSpeed.ToString(CultureInfo.InvariantCulture)
+                ),
+                new XElement(
+                    wpmlNs + "waypointHeadingParam",
+                    new XElement(
+                        wpmlNs + "waypointHeadingMode",
+                        waypoint.WaypointHeadingMode ?? "smooth"
+                    ),
+                    new XElement(
+                        wpmlNs + "waypointHeadingAngle",
+                        waypoint.WaypointHeadingAngle?.ToString() ?? "0"
+                    ),
+                    new XElement(
+                        wpmlNs + "waypointPoiPoint",
+                        waypoint.WaypointPoiPoint ?? "0.000000,0.000000,0.000000"
+                    ),
+                    new XElement(
+                        wpmlNs + "waypointHeadingAngleEnable",
+                        waypoint.WaypointHeadingAngleEnable ?? 0
+                    ),
+                    new XElement(
+                        wpmlNs + "waypointHeadingPathMode",
+                        waypoint.WaypointHeadingPathMode ?? "followBadArc"
+                    )
+                ),
+                new XElement(
+                    wpmlNs + "waypointTurnParam",
+                    new XElement(
+                        wpmlNs + "waypointTurnMode",
+                        waypoint.WaypointTurnMode ?? "toPointAndPassWithContinuityCurvature"
+                    ),
+                    new XElement(
+                        wpmlNs + "waypointTurnDampingDist",
+                        waypoint.WaypointTurnDampingDist.ToString(CultureInfo.InvariantCulture)
+                    )
+                ),
+                new XElement(wpmlNs + "useStraightLine", waypoint.UseStraightLine ?? "0"),
+                actionGroup
+            );
+        }
+
+        private XElement? CreateActionGroup(string actuatorFunc, int waypointIndex)
+        {
+            if (string.IsNullOrWhiteSpace(actuatorFunc) || actuatorFunc == "none")
             {
-                // Define variables for waypoints
-                var lat = waypoint.Latitude.ToString("F14", CultureInfo.InvariantCulture);
-                var lng = waypoint.Longitude.ToString("F14", CultureInfo.InvariantCulture);
-                var height = waypoint.ExecuteHeight.ToString(CultureInfo.InvariantCulture);
-                var speed = waypoint.WaypointSpeed.ToString(CultureInfo.InvariantCulture);
-                var headingMode = waypoint.WaypointHeadingMode ?? "smooth";
-                var headingAngle = waypoint.WaypointHeadingAngle ?? "0";
-                var waypointPoiPoint = waypoint.WaypointPoiPoint ?? "0.000000,0.000000,0.000000";
-                var headingAngleEnable = waypoint.WaypointHeadingAngleEnable ?? 0;
-                var pathMode = waypoint.WaypointHeadingPathMode ?? "followBadArc";
-                var turnMode = waypoint.WaypointTurnMode ?? "toPointAndPassWithContinuityCurvature";
-                var dampingDist =
-                    waypoint.WaypointTurnDampingDist.ToString(CultureInfo.InvariantCulture) ?? "0";
-                var useStraightLine = waypoint.UseStraightLine ?? "0";
-
-                // Determine the action to use based on waypoint.Action property
-                string actionActuatorFunc = GetActionActuatorFunc(waypoint.Action);
-                string actionXml = GetActionXml(actionActuatorFunc);
-
-                // Add Placemark section in WPML content
-                wpmlContent.AppendLine(
-                    $@"
-                       <Placemark>
-              <Point>
-                  <coordinates>{lng},{lat}</coordinates>
-              </Point>
-              <wpml:index>{waypoint.Index}</wpml:index>
-              <wpml:executeHeight>{height}</wpml:executeHeight>
-              <wpml:waypointSpeed>{speed}</wpml:waypointSpeed>
-              <wpml:waypointHeadingParam>
-                  <wpml:waypointHeadingMode>{headingMode}</wpml:waypointHeadingMode>
-                  <wpml:waypointHeadingAngle>{headingAngle}</wpml:waypointHeadingAngle>
-                  <wpml:waypointPoiPoint>{waypointPoiPoint}</wpml:waypointPoiPoint>
-                  <wpml:waypointHeadingAngleEnable>{headingAngleEnable}</wpml:waypointHeadingAngleEnable>
-                  <wpml:waypointHeadingPathMode>{pathMode}</wpml:waypointHeadingPathMode>
-              </wpml:waypointHeadingParam>
-              <wpml:waypointTurnParam>
-                  <wpml:waypointTurnMode>{turnMode}</wpml:waypointTurnMode>
-                  <wpml:waypointTurnDampingDist>{dampingDist}</wpml:waypointTurnDampingDist>
-              </wpml:waypointTurnParam>
-              <wpml:useStraightLine>{useStraightLine}</wpml:useStraightLine>
-              <wpml:actionGroup>
-                  <wpml:actionGroupId>1</wpml:actionGroupId>
-                  <wpml:actionGroupStartIndex>2</wpml:actionGroupStartIndex>
-                  <wpml:actionGroupEndIndex>2</wpml:actionGroupEndIndex>
-                  <wpml:actionGroupMode>parallel</wpml:actionGroupMode>
-                  <wpml:actionTrigger>
-                      <wpml:actionTriggerType>reachPoint</wpml:actionTriggerType>
-                  </wpml:actionTrigger>
-                  {actionXml}
-              </wpml:actionGroup>
-         <wpml:actionGroup>
-          <wpml:actionGroupId>2</wpml:actionGroupId>
-          <wpml:actionGroupStartIndex>2</wpml:actionGroupStartIndex>
-          <wpml:actionGroupEndIndex>2</wpml:actionGroupEndIndex>
-          <wpml:actionGroupMode>parallel</wpml:actionGroupMode>
-          <wpml:actionTrigger>
-            <wpml:actionTriggerType>reachPoint</wpml:actionTriggerType>
-          </wpml:actionTrigger>
-          <wpml:action>
-            <wpml:actionId>7</wpml:actionId>
-            <wpml:actionActuatorFunc>gimbalEvenlyRotate</wpml:actionActuatorFunc>
-            <wpml:actionActuatorFuncParam>
-              <wpml:gimbalPitchRotateAngle>-45</wpml:gimbalPitchRotateAngle>
-              <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-            </wpml:actionActuatorFuncParam>
-          </wpml:action>
-        </wpml:actionGroup>
-          </Placemark>"
-                );
+                return null;
             }
 
-            wpmlContent.AppendLine(@"    </Folder>");
-            wpmlContent.AppendLine(@"  </Document>");
-            wpmlContent.AppendLine(@"</kml>");
+            return new XElement(
+                wpmlNs + "actionGroup",
+                new XElement(wpmlNs + "actionGroupId", waypointIndex),
+                new XElement(wpmlNs + "actionGroupStartIndex", waypointIndex),
+                new XElement(wpmlNs + "actionGroupEndIndex", waypointIndex),
+                new XElement(wpmlNs + "actionGroupMode", "parallel"),
+                new XElement(
+                    wpmlNs + "actionTrigger",
+                    new XElement(wpmlNs + "actionTriggerType", "reachPoint")
+                ),
+                CreateActionElement(actuatorFunc)
+            );
+        }
 
-            return await Task.FromResult(wpmlContent.ToString());
+        private XElement CreateActionElement(string actuatorFunc)
+        {
+            return actuatorFunc switch
+            {
+                "takePhoto"
+                    => new XElement(
+                        wpmlNs + "action",
+                        new XElement(wpmlNs + "actionId", "6"),
+                        new XElement(wpmlNs + "actionActuatorFunc", "takePhoto"),
+                        new XElement(
+                            wpmlNs + "actionActuatorFuncParam",
+                            new XElement(wpmlNs + "payloadPositionIndex", "0")
+                        )
+                    ),
+                "startRecord"
+                    => new XElement(
+                        wpmlNs + "action",
+                        new XElement(wpmlNs + "actionId", "6"),
+                        new XElement(wpmlNs + "actionActuatorFunc", "startRecord"),
+                        new XElement(
+                            wpmlNs + "actionActuatorFuncParam",
+                            new XElement(wpmlNs + "payloadPositionIndex", "0")
+                        )
+                    ),
+                "stopRecord"
+                    => new XElement(
+                        wpmlNs + "action",
+                        new XElement(wpmlNs + "actionId", "6"),
+                        new XElement(wpmlNs + "actionActuatorFunc", "stopRecord"),
+                        new XElement(
+                            wpmlNs + "actionActuatorFuncParam",
+                            new XElement(wpmlNs + "payloadPositionIndex", "0")
+                        )
+                    ),
+                _ => new XElement(wpmlNs + "action") // Fallback empty action
+            };
         }
 
         private async Task<byte[]> CreateKmzAsync(string kmlContent, string wpmlContent)
@@ -324,50 +373,5 @@ namespace WaypointMapping.Server.Services
             };
         }
 
-        /// <summary>
-        /// Generate the XML action block for the waypoint action
-        /// </summary>
-        private string GetActionXml(string actionActuatorFunc)
-        {
-            return actionActuatorFunc switch
-            {
-                "takePhoto"
-                    => @"
-                  <wpml:action>
-                      <wpml:actionId>1</wpml:actionId>
-                      <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
-                  </wpml:action>
-                  <wpml:action>
-                    <wpml:actionId>6</wpml:actionId>
-                    <wpml:actionActuatorFunc>takePhoto</wpml:actionActuatorFunc>
-                    <wpml:actionActuatorFuncParam>
-                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-                    </wpml:actionActuatorFuncParam>
-                  </wpml:action>",
-                "startRecord"
-                    => @"
-                  <wpml:action>
-                      <wpml:actionId>1</wpml:actionId>
-                      <wpml:actionActuatorFunc>gimbalRotate</wpml:actionActuatorFunc>
-                  </wpml:action>
-                  <wpml:action>
-                    <wpml:actionId>6</wpml:actionId>
-                    <wpml:actionActuatorFunc>startRecord</wpml:actionActuatorFunc>
-                    <wpml:actionActuatorFuncParam>
-                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-                    </wpml:actionActuatorFuncParam>
-                  </wpml:action>",
-                "stopRecord"
-                    => @"
-                  <wpml:action>
-                    <wpml:actionId>6</wpml:actionId>
-                    <wpml:actionActuatorFunc>stopRecord</wpml:actionActuatorFunc>
-                    <wpml:actionActuatorFuncParam>
-                      <wpml:payloadPositionIndex>0</wpml:payloadPositionIndex>
-                    </wpml:actionActuatorFuncParam>
-                  </wpml:action>",
-                _ => "" // No action - empty action group
-            };
-        }
     }
 }

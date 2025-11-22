@@ -54,6 +54,7 @@ namespace WaypointMapping.Server.Services
                 UnitType = unitType_in,
                 Altitude = altitude,
                 Speed = speed,
+                Angle = angle,
                 LineSpacing = in_distance,
                 StartingIndex = startingIndex,
                 PhotoInterval = (int)photoInterval,
@@ -170,13 +171,19 @@ namespace WaypointMapping.Server.Services
                     {
                         Altitude = parameters.Altitude,
                         Speed = parameters.Speed,
+                        Angle = parameters.Angle,
                         LineSpacing = parameters.LineSpacing,
                         StartingIndex = currentIndex,
                         Action = parameters.Action,
                         PhotoInterval = parameters.PhotoInterval,
                         UseEndpointsOnly = parameters.UseEndpointsOnly,
                         IsNorthSouth = parameters.IsNorthSouth,
-                        UnitType = parameters.UnitType
+                        UnitType = parameters.UnitType,
+                        FocalLength = parameters.FocalLength,
+                        SensorWidth = parameters.SensorWidth,
+                        SensorHeight = parameters.SensorHeight,
+                        Overlap = parameters.Overlap,
+                        ManualSpeedSet = parameters.ManualSpeedSet
                     };
 
                     var shapeWaypoints = service.GenerateWaypoints(shape, shapeParameters);

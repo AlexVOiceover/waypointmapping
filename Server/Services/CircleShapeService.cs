@@ -37,84 +37,30 @@ namespace WaypointMapping.Server.Services
                 return new List<Waypoint>();
             }
 
-            var waypoints = new List<Waypoint>();
             var center = shape.Coordinates[0];
             double radiusMeters = shape.Radius;
 
-            _logger.LogInformation(
-                "Generating circle waypoints. Center: ({Lat}, {Lng}), Radius: {Radius}m",
-                center.Lat,
-                center.Lng,
-                radiusMeters
-            );
-
-            // Log detailed parameters for debugging
-            _logger.LogInformation(
-                "Circle parameters: PhotoInterval={PhotoInterval}, Speed={Speed}, LineSpacing={LineSpacing}",
-                parameters.PhotoInterval,
-                parameters.Speed,
-                parameters.LineSpacing
-            );
-
-            // Log the center coordinates explicitly - these are the actual map coordinates
-            _logger.LogInformation(
-                "Center coordinates: Lat={CenterLat}, Lng={CenterLng}",
-                center.Lat,
-                center.Lng
-            );
-
-            // Explicitly verify the radius
-            _logger.LogInformation("Circle radius: {Radius} meters", radiusMeters);
-
-            // Handle the center coordinates validation with more info
-            if (center.Lat == 0 && center.Lng == 0)
+            if (radiusMeters <= 0)
             {
-                _logger.LogWarning(
-                    "Center at (0,0) - CRITICAL ERROR: Circle center is at (0,0) which is likely incorrect. Actual center values: Lat={Lat}, Lng={Lng}, Radius={Radius}",
-                    center.Lat,
-                    center.Lng,
-                    radiusMeters
-                );
+                throw new ArgumentException("Circle radius must be greater than zero.", nameof(shape));
             }
 
-            // Always log the center coordinates
-            _logger.LogInformation(
-                "Circle center raw coordinate values: Center.Lat={CenterLat}, Center.Lng={CenterLng}, Center.Radius={Radius}",
-                center.Lat,
-                center.Lng,
-                radiusMeters
-            );
-
-            // If center coordinates are suspiciously small (near 0,0), log a warning
-            if (Math.Abs(center.Lat) < 1 && Math.Abs(center.Lng) < 1)
+            // Optional fallback only when coordinates are clearly invalid (0,0)
+            if (Math.Abs(center.Lat) < 1e-9 && Math.Abs(center.Lng) < 1e-9)
             {
-                _logger.LogWarning(
-                    "CAUTION: Center coordinates are suspiciously small. They might be relative offsets instead of absolute coordinates."
-                );
-
-                // Attempt to use a default center if the coordinates are likely invalid
-                // This is a fallback for testing only - Helsinki coordinates
-                if (Math.Abs(center.Lat) < 0.001 && Math.Abs(center.Lng) < 0.001)
+                _logger.LogWarning("Circle center at (0,0) detected. Falling back to London coordinates.");
+                center = new Coordinate
                 {
-                    double defaultLat = 60.1699;
-                    double defaultLng = 24.9384;
-
-                    _logger.LogWarning(
-                        "Coordinates near (0,0) detected! Using default center at Helsinki ({DefaultLat}, {DefaultLng})",
-                        defaultLat,
-                        defaultLng
-                    );
-
-                    // Use the default coordinates for testing
-                    // IMPORTANT: Comment this out in production - this is just to test rendering
-                    center.Lat = defaultLat;
-                    center.Lng = defaultLng;
-                }
+                    Lat = 51.5074,
+                    Lng = -0.1278,
+                    Radius = center.Radius
+                };
             }
 
-            // Use the circle algorithm with the provided center coordinates
             double centerLat = center.Lat;
             double centerLng = center.Lng;
+
+            var waypoints = new List<Waypoint>();
 
             // Calculate the number of waypoints based on circumference and speed
             double circumference = 2 * Math.PI * radiusMeters;
@@ -209,34 +155,6 @@ namespace WaypointMapping.Server.Services
 
             _logger.LogInformation("Generated {Count} waypoints for circle", waypoints.Count);
             return waypoints;
-        }
-
-        private Waypoint CreateWaypoint(
-            int index,
-            double lat,
-            double lng,
-            WaypointParameters parameters
-        )
-        {
-            string action = parameters.Action;
-
-            // Handle photo interval if specified
-            if (parameters.PhotoInterval > 0 && index % parameters.PhotoInterval == 0)
-            {
-                action = WaypointActions.TakePhoto;
-            }
-
-            // Create waypoint with default heading (will be set in the calling method)
-            var waypoint = new Waypoint(
-                index,
-                lat,
-                lng,
-                parameters.Altitude,
-                parameters.Speed,
-                action
-            );
-
-            return waypoint;
         }
     }
 }
