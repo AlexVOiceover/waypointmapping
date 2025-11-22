@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { ApiError } from './ApiError';
 
 const apiBaseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) || '';
 
@@ -182,7 +183,11 @@ export const generateWaypoints = async (request: GenerateWaypointRequest): Promi
     if (axios.isAxiosError(error)) {
       console.error('Response status:', error.response?.status);
       console.error('Response data:', error.response?.data);
-      throw error.response?.data || error.message || 'Failed to generate waypoints';
+      throw new ApiError(
+        error.response?.status || 500,
+        error.response?.data,
+        `Failed to generate waypoints: ${error.message}`
+      );
     }
     throw error;
   }
@@ -195,7 +200,11 @@ export const updateWaypoint = async (id: number, updatedWaypoint: WaypointModel)
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw error.response?.data || 'Failed to update waypoint';
+      throw new ApiError(
+        error.response?.status || 500,
+        error.response?.data,
+        `Failed to update waypoint ${id}: ${error.message}`
+      );
     }
     throw error;
   }
@@ -208,7 +217,11 @@ export const deleteWaypoint = async (id: number): Promise<unknown> => {
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
-      throw error.response?.data || 'Failed to delete waypoint';
+      throw new ApiError(
+        error.response?.status || 500,
+        error.response?.data,
+        `Failed to delete waypoint ${id}: ${error.message}`
+      );
     }
     throw error;
   }

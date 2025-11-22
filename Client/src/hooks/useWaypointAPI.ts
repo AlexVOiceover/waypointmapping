@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useMapContext } from '../context/MapContext';
 import { useFlightParamsContext } from '../context/FlightParamsContext';
 import { GenerateWaypointInfoboxText } from '../services/JSFunctions';
+import { ApiError } from '../services/ApiError';
 
 // Get API base URL from environment variables
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -688,23 +689,29 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
     } catch (error) {
       console.error('Error generating waypoints:', error);
 
+      // If it's already an ApiError, just re-throw it
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
       // Log more detailed error information
       if (axios.isAxiosError(error)) {
         console.error('Response data:', error.response?.data);
         console.error('Response status:', error.response?.status);
-        if (error.response) {
-          throw error.response.data || 'Server error generating waypoints';
-        } else if (error.request) {
-          console.error('No response received:', error.request);
-          throw new Error('No response from server. Please check your connection.');
-        } else {
-          throw new Error('Error setting up the request');
-        }
+        throw new ApiError(
+          error.response?.status || 500,
+          error.response?.data,
+          error.response
+            ? `Server error generating waypoints: ${error.message}`
+            : error.request
+              ? 'No response from server. Please check your connection.'
+              : 'Error setting up the request'
+        );
       } else if (error instanceof Error) {
         console.error('Error message:', error.message);
         throw error;
       } else {
-        throw 'Unknown error generating waypoints';
+        throw new Error('Unknown error generating waypoints');
       }
     }
   }, [mapRef, genInfoWindowRef, redrawFlightPaths, flightParams]);
@@ -775,7 +782,21 @@ export const useWaypointAPI = (): UseWaypointAPIReturn => {
       }
     } catch (error) {
       console.error('Error generating KML:', error);
-      alert('Error generating KML file. Check console for details.');
+
+      let errorMessage = 'Error generating KML file. Check console for details.';
+
+      if (error instanceof ApiError) {
+        errorMessage = error.getUserMessage();
+        console.error('API Error:', error.toJSON());
+      } else if (axios.isAxiosError(error)) {
+        errorMessage = `Failed to generate KML: ${error.message}`;
+        console.error('Response status:', error.response?.status);
+        console.error('Response data:', error.response?.data);
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      alert(errorMessage);
     }
   }, [mapRef]);
 
